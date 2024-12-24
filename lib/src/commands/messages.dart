@@ -12,6 +12,9 @@ const flutterMissingError =
 const invalidConfig =
     'The pubspec.yaml file has an invalid widget_wrapper configuration. '
     'Visit https://pub.dev/packages/widget_wrapper for documentation how to setup widget_wrapper.';
+const parsePubspecError =
+    'An error occurred while parsing the pubspec.yaml file. '
+    'Please ensure that the file is correctly formatted and that it does not contain any syntax errors.';
 String invalidLibraryError(String package) =>
     'The specified "$package" library could not be found. '
     'Please ensure that the package name is correct and that it is included in your dependencies. '

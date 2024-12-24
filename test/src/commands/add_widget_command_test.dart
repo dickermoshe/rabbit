@@ -119,7 +119,7 @@ dependencies:
     path: flutter
 widget_wrapper:
   widgets:
-    - 1: invalid_widget
+    1: invalid_widget
 ''',
         '''
 name: widget_wrapper
@@ -129,7 +129,7 @@ dependencies:
     path: flutter
 widget_wrapper:
   widgets:
-    - hllo: invalid_widget
+    hllo: invalid_widget
 '''
       ];
       for (final config in badConfigs) {
@@ -138,9 +138,7 @@ widget_wrapper:
         expect(result, equals(ExitCode.usage.code));
       }
       verify(
-        () => logger.err(
-          invalidConfig,
-        ),
+        () => logger.err(parsePubspecError),
       ).called(badConfigs.length);
     });
     test('good config', () async {
@@ -154,8 +152,8 @@ dependencies:
     
 widget_wrapper:
   widgets:
-    - hello: 
-        - widget
+    hello: 
+      - widget
 '''
       ];
       for (final config in badConfigs) {
@@ -189,7 +187,7 @@ widget_wrapper:
                 '''
 widget_wrapper:
   widgets:
-    - flutter:
+    flutter:
       - invalid_widget
 ''');
             final result =
@@ -204,9 +202,10 @@ widget_wrapper:
                 '''
 widget_wrapper:
   widgets:
-    - package:flutter/material.dart:
+    package:flutter/material.dart:
       - foo
-    - package:flutter/cupertino.dart: all
+    package:flutter/cupertino.dart:
+      - all
 ''');
             final result =
                 await commandRunner.run(['generate', "--validate_libraries"]);
@@ -217,7 +216,7 @@ widget_wrapper:
                 '''
 widget_wrapper:
   widgets:
-    - "package:flutter/material.dart":
+    "package:flutter/material.dart":
       - invalid_widget
 ''');
             final result = await commandRunner.run(['generate']);
@@ -233,7 +232,8 @@ widget_wrapper:
                 '''
 widget_wrapper:
   widgets:
-    - "package:flutter/material.dart": all
+    "package:flutter/material.dart": 
+      - all
 ''');
             final result = await commandRunner.run(['generate']);
             expect(result, equals(ExitCode.success.code));

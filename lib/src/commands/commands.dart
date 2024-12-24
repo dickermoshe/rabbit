@@ -1,2 +1,2 @@
-export 'add_widget_command.dart';
+export 'generate_command.dart';
 export 'update_command.dart';

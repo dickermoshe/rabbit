@@ -10,10 +10,12 @@ import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/dart/element/type_system.dart';
 import 'package:analyzer/dart/element/visitor.dart';
 import 'package:args/command_runner.dart';
+import 'package:checked_yaml/checked_yaml.dart';
 import 'package:code_builder/code_builder.dart' as cb;
 import 'package:mason_logger/mason_logger.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:widget_wrapper/src/commands/messages.dart';
+import 'package:widget_wrapper/src/config.dart';
 import 'package:widget_wrapper/src/utils/progress_isolate.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
@@ -59,12 +61,24 @@ class AddWidgetCommand extends Command<int> {
     return AnalysisContextCollection(includedPaths: [dir]).contextFor(dir);
   }
 
+  void _logError(String message, [Object? e, StackTrace? s]) {
+    if (_logger.level == Level.verbose) {
+      if (e != null) _logger.err(e.toString());
+      if (s != null) _logger.err(s.toString());
+    } else {
+      if (e != null || s != null) {
+        _logger.err('Run with --verbose for more details');
+      }
+    }
+    _logger.err(message);
+  }
+
   @override
   Future<int> run() async {
     /// Due to a bug in the Flutter SDK, the `flutter` executable is not able to
     /// run this command. This will warn the user if they are using the `flutter`
     if (p.basenameWithoutExtension(Platform.executable).endsWith('flutter')) {
-      _logger.err(useDartExeError);
+      _logError(useDartExeError);
       return ExitCode.usage.code;
     }
 
@@ -74,98 +88,26 @@ class AddWidgetCommand extends Command<int> {
     final currentDir = Directory.current;
     final pubspecFile = File(p.join(currentDir.path, 'pubspec.yaml'));
     if (!pubspecFile.existsSync()) {
-      _logger.err(pubspecMissingError);
+      _logError(pubspecMissingError);
       return ExitCode.usage.code;
     }
+
     final pubspecText = pubspecFile.readAsStringSync();
-    final pubspecYaml = loadYaml(pubspecText) as YamlMap;
+
     final pubspec = Pubspec.parse(pubspecText);
 
     if (!pubspec.dependencies.containsKey('flutter')) {
       _logger.err(flutterMissingError);
       return ExitCode.usage.code;
     }
-
-    /// The configuration for the widget_wrapper is stored in the `widget_wrapper`
-    final YamlMap widgetWrapperConfig;
-
-    /// The configuration for the widgets is stored in the `widgets` of the `widget_wrapper`
-    final Map rawWidgetMap;
-
-    /// Parse the widget_wrapper configuration and validate that it is correct.
+    final Config config;
     try {
-      widgetWrapperConfig = (pubspecYaml['widget_wrapper'] as YamlMap);
-
-      /// The widgets could be in map form:
-      /// ```
-      /// widget_wrapper:
-      ///   widgets:
-      ///     package_name:
-      ///       - widget_name
-      /// ```
-      /// or in list form:
-      /// ```
-      /// widget_wrapper:
-      ///   widgets:
-      ///   - package_name:
-      ///     - widget_name
-      /// ```
-      /// This will convert the list form to the map form.
-      switch (widgetWrapperConfig['widgets']) {
-        case YamlMap map:
-          rawWidgetMap = map;
-          break;
-        case YamlList list:
-          if (list.every((element) => element is YamlMap)) {
-            rawWidgetMap = Map();
-            for (final element in list) {
-              rawWidgetMap.addAll(element as YamlMap);
-            }
-          } else {
-            _logger.err(invalidConfig);
-            return ExitCode.usage.code;
-          }
-          break;
-        default:
-          _logger.err(invalidConfig);
-          return ExitCode.usage.code;
-      }
+      config = checkedYamlDecode(
+          pubspecText, (p0) => RootConfig.fromJson(p0!).widgetWrapper);
     } catch (e, s) {
-      _logger.err(e.toString());
-      if (_logger.level == Level.verbose) _logger.err(s.toString());
-      _logger.err(s.toString());
-      _logger.err(invalidConfig);
+      _logError(parsePubspecError, e, s);
       return ExitCode.usage.code;
     }
-
-    /// Parse the widget configuration and validate that it is correct.
-    final widgetMap = <String, List<String>>{};
-    for (final entry in rawWidgetMap.entries) {
-      if (entry.key is! String) {
-        _logger
-            .err("Invalid key in widget map: ${entry.key}. Must be a string.");
-        _logger.err(invalidConfig);
-        return ExitCode.usage.code;
-      }
-      final value = <String>[];
-      switch (entry.value) {
-        case String s when s == 'all':
-          value.add("__all__");
-          break;
-        case List l when l.every((element) => element is String):
-          value.addAll(l.cast<String>());
-          break;
-        default:
-          _logger.err(
-              "Invalid value in widget map: ${entry.value}. Must be a list of widgets or 'all'.");
-          _logger.err(invalidConfig);
-          return ExitCode.usage.code;
-      }
-      widgetMap[entry.key as String] = value;
-    }
-
-    /// TODO: Make this configurable and add tests.
-    final String prefix = "\$";
 
     /// If the `validate_config` flag is set, then we will return early.
     if (argResults!['validate_config'] as bool) {
@@ -174,21 +116,21 @@ class AddWidgetCommand extends Command<int> {
 
     /// Create the analysis context and locate the libraries for the widgets.
     final context = await createContext(p.normalize(currentDir.path));
-    final libraryMap = <LibraryElement, List<String>>{};
-    for (final MapEntry(key: package, value: widgets) in widgetMap.entries) {
+    final packages = <Package>[];
+    for (final MapEntry(key: package, value: widgetNames)
+        in config.widgets.entries) {
       try {
-        final stopper =
-            await _logger.isolateProgress('Parsing package: ${package}');
-
-        final library = (await context.currentSession.getLibraryByUri(package)
-                as LibraryElementResult)
-            .element;
-        libraryMap[library] = widgets;
+        /// Locate the library for the package.
+        final stopper = await _logger.isolateProgress(
+          'Parsing package: ${package}',
+        );
+        final result = (await context.currentSession.getLibraryByUri(package)
+            as LibraryElementResult);
+        final library = result.element;
+        packages.add(Package(library: library, widgetNames: widgetNames));
         await stopper.stop();
       } catch (e, s) {
-        _logger.err(e.toString());
-        if (_logger.level == Level.verbose) _logger.err(s.toString());
-        _logger.err(invalidLibraryError(package));
+        _logError(invalidLibraryError(package), e, s);
         return ExitCode.usage.code;
       }
     }
@@ -198,47 +140,44 @@ class AddWidgetCommand extends Command<int> {
       return ExitCode.success.code;
     }
 
-    /// locate the classes for the widgets.
-    final widgetLibraryMap = <LibraryElement, List<ClassElement>>{};
-    for (final MapEntry(key: library, value: widgetNames)
-        in libraryMap.entries) {
+    /// Locate the classes for the widgets.
+    for (final package in packages) {
       /// Visit the library to find all widgets.
-      final visitor = WidgetVisitor(context: context, rootLibrary: library);
-      library.accept(visitor);
+      final visitor =
+          WidgetVisitor(context: context, rootLibrary: package.library);
+      package.library.accept(visitor);
+
+      if (package.all) {
+        package.classes.addAll(visitor.seenWidgets);
+      } else {}
 
       /// Find the widget elements that match the widget names.
-      for (var widgetName in widgetNames) {
-        if (widgetName == "__all__") {
-          widgetLibraryMap
-              .putIfAbsent(library, () => [])
-              .addAll(visitor.seenWidgets);
-          continue;
-        }
-        final widgetElements =
-            visitor.seenWidgets.where((element) => element.name == widgetName);
+      for (var widgetName in package.widgetNames) {
+        /// Find the widget element that matches the widget name.
+        final ClassElement widgetElement;
+        final matchedClasses = visitor.seenWidgets
+            .where((element) => element.name == widgetName)
+            .toSet();
 
         /// If the widget is not found, then we will return early.
-        if (widgetElements.isEmpty) {
-          _logger.err(
-            widgetNotFound(library.source.uri.toString(), widgetName),
-          );
+        if (matchedClasses.isEmpty) {
+          _logger.err(widgetNotFound(
+              package.library.source.uri.toString(), widgetName));
           return ExitCode.usage.code;
         }
 
         /// If there are multiple widgets with the same name, then we will choose one.
-        /// If there is only one widget, then we will use that one.
-        final ClassElement widgetElement;
-        if (widgetElements.length > 1) {
+        if (matchedClasses.length > 1) {
           widgetElement = _logger.chooseOne(
-              "Found mutiple matches for $widgetName in ${library.source.uri.toString()}:",
+              "Found mutiple matches for $widgetName in ${package.library.source.uri.toString()}:",
               display: (e) => "${e.name} : ${e.library.source.uri}",
-              choices: widgetElements.toList());
+              choices: matchedClasses.toList());
         } else {
-          widgetElement = widgetElements.first;
-        }
+          /// If there is only one widget, then we will use that one.
 
-        /// Add the widget to the widget library map.
-        widgetLibraryMap.putIfAbsent(library, () => []).add(widgetElement);
+          widgetElement = matchedClasses.first;
+        }
+        package.classes.add(widgetElement);
       }
     }
 
@@ -249,14 +188,13 @@ class AddWidgetCommand extends Command<int> {
 
     /// Parse the constructors for the widget.
     final library = cb.Library((b) {
-      final MapEntry(key: library, value: classes) =
-          widgetLibraryMap.entries.first;
+      final Package(classes: classes, library: library) = packages.first;
       b.name = library.name;
 
       for (final wElement in classes) {
         b.body.add(cb.Class(
           (c) {
-            c.name = prefix + wElement.name.pascalCase;
+            c.name = config.prefix + wElement.name.pascalCase;
             c.extend =
                 cb.refer('StatelessWidget', 'package:flutter/widgets.dart');
 
@@ -373,16 +311,9 @@ class WidgetVisitor extends RecursiveElementVisitor {
   }
 }
 
-// cb.TypeReference _referenceFromDartType(DartType type) {
-//   return cb.TypeReference((p0) {
-//     p0.symbol = type.element?.name;
-//     p0.url = type.element?.library?.source.uri.toString();
-//     if (type is ParameterizedType) {
-//       p0.types.addAll(type.typeArguments.map(_referenceFromDartType));
-//     }
-//   });
-// }
-
+/////////////////////////////////////////////////////
+/// The below has been copied form te Mockito package.
+/////////////////////////////////////////////////////
 cb.Reference _typeReference(DartType type, TypeSystem typeSystem,
     {bool forceNullable = false, bool overrideVoid = false}) {
   if (overrideVoid && type is VoidType) {
@@ -473,29 +404,21 @@ String? _typeImport(
   return element!.library!.source.uri.toString();
 }
 
-// T _withTypeParameters<T>(Iterable<TypeParameterElement> typeParameters,
-//       T Function(Iterable<cb.TypeReference>, Iterable<cb.TypeReference>) body,
-//       {Iterable<TypeParameterElement>? typeFormalsHack}) {
-//     // final typeVars = [for (final t in typeParameters) _newTypeVar(t)];
-//     // final scope = Map.fromIterables(typeParameters, typeVars);
-//     // _typeVariableScopes.add(scope);
-//     if (typeFormalsHack != null) {
-//       // add an additional scope based on [type.typeFormals] just to make
-//       // type parameters references.
-//       // _typeVariableScopes.add(Map.fromIterables(typeFormalsHack, typeVars));
-//       // use typeFormals instead of typeParameters to create refs.
-//       typeParameters = typeFormalsHack;
-//     }
-//     // final typeRefsWithBounds = typeParameters.map(_typeParameterReference);
-//     // final typeRefs =
-//     //     typeParameters.map((t) => _typeParameterReference(t, withBound: false));
+/////////////////////////////////////////////////////
+/// The above has been copied form te Mockito package.
+/////////////////////////////////////////////////////
 
-//     final result = body(typeRefsWithBounds, typeRefs);
-//     _typeVariableScopes.removeLast();
-//     if (typeFormalsHack != null) {
-//       // remove the additional scope too.
-//       _typeVariableScopes.removeLast();
-//     }
-//     _usedTypeVariables.removeAll(typeVars);
-//     return result;
-//   }
+class Package {
+  Package({
+    required this.library,
+    required Set<String> widgetNames,
+  }) {
+    all = widgetNames.contains('all');
+    this.widgetNames = widgetNames.where((element) => element != 'all').toSet();
+  }
+
+  late bool all;
+  final LibraryElement library;
+  late final Set<String> widgetNames;
+  final Set<ClassElement> classes = {};
+}
