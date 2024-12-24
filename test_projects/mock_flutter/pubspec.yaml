@@ -1,0 +1,15 @@
+name: test_project_mock_flutter
+
+environment:
+  sdk: ^3.5.0
+  
+  
+
+dependencies:
+  flutter:
+    path: flutter
+    
+
+dev_dependencies:
+  widget_wrapper:
+    path: ../..
