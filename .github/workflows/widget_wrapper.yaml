@@ -71,7 +71,7 @@ jobs:
 
       - name: 📦 Install Dependencies
         run: |
-          dart pub get
+          dart pub get --no-precompile
 
       - name: 🔎 Verify version
-        run: flutter run test --run-skipped -t version-verify
+        run: dart run test --run-skipped -t version-verify

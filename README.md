@@ -92,9 +92,15 @@ In this example we will generate a `RedContainer` widget that is identical to a 
 
 2. Run the generation command:
     ```bash
-    dart run rabbit generate
-    ```
-    This will generate a `$Container` widget in the default output directory.
+      dart run rabbit generate
+      ```
+      This will generate a `$Container` widget in the default output directory.
+
+      > [!IMPORTANT]
+      > Rabbit does not handle imports perfectly. You may need to add or remove some imports manually.   
+      > However, any other syntax errors are considered bugs, and you should open an issue if you encounter them.
+
+
 3. Locate the generated widget and customize it as needed.
     ```dart
     class RedContainer extends StatelessWidget {
