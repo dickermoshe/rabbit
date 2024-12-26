@@ -89,7 +89,7 @@ In this example we will generate a `RedContainer` widget that is identical to a 
 1. Configure your widget wrappers in `pubspec.yaml`:
 
     ```yaml
-    widget_wrapper:
+    rabbit:
       widgets:
         package:flutter/material.dart:
           - Container
@@ -141,7 +141,7 @@ RedContainer(
 
 ## Configuration Options
 
-The following options can be configured in your `pubspec.yaml` under the `widget_wrapper` key:
+The following options can be configured in your `pubspec.yaml` under the `rabbit` key:
 
 | Option        | Default           | Description                                          |
 | ------------- | ----------------- | ---------------------------------------------------- |
@@ -154,7 +154,7 @@ The following options can be configured in your `pubspec.yaml` under the `widget
 ### Example Configuration
 
 ```yaml
-widget_wrapper:
+rabbit:
   output_dir: lib/src/widgets 
   add_imports: true
   prefix: My
@@ -175,7 +175,7 @@ The `widgets` option is a map where:
 
 You can use the special value `all` to generate wrappers for all widgets in a package:
 ```yaml
-widget_wrapper:
+rabbit:
   widgets:
     package:flutter/material.dart:
       - all  # Will generate wrappers for all Material widgets
@@ -185,7 +185,7 @@ widget_wrapper:
 ### `output_dir`
 The directory where generated files will be placed. 
 ```yaml
-widget_wrapper:
+rabbit:
   output_dir: lib/src/widgets  # Your custom path
 ```
 - Default: `lib/src/wrapped`
@@ -199,7 +199,7 @@ widget_wrapper:
 If you want to use this feature, you can enable it like this:
 
 ```yaml
-widget_wrapper:
+rabbit:
   add_imports: true
 ```
 - Default: `false`
@@ -208,7 +208,7 @@ widget_wrapper:
 ### `prefix`
 The prefix added to generated widget names to avoid naming conflicts.
 ```yaml
-widget_wrapper:
+rabbit:
   prefix: My  # Will generate MyContainer, MyButton, etc.
 ```
 - Default: `$`
@@ -218,7 +218,7 @@ widget_wrapper:
 ### `docs`
 Controls whether documentation comments from the original widget are included.
 ```yaml
-widget_wrapper:
+rabbit:
   docs: true
 ```
 - Default: `false`
