@@ -19,6 +19,7 @@ on:
       - "lib/**"
       - "test/**"
       - "pubspec.yaml"
+  workflow_dispatch:
 
 jobs:
   build:
