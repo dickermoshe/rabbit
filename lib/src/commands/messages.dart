@@ -1,14 +1,16 @@
 const useDartExeError = 'It appears you are using the Flutter executable. '
     'Please note that this command is intended to be run with the Dart executable. \n'
     'e.g. dart run widget_wrapper generate';
-const pubspecMissingError = 'No pubspec.yaml file found in the current directory. '
+const pubspecMissingError =
+    'No pubspec.yaml file found in the current directory. '
     'Please ensure that you are running this command from the root of a Flutter project '
     'that contains a pubspec.yaml file.';
 const flutterMissingError =
     'The pubspec.yaml file does not indicate that this is a Flutter project. '
     'Please ensure that you are running this command from the root of a Flutter project '
     'that contains the Flutter dependency in its pubspec.yaml file.';
-const invalidConfig = 'The pubspec.yaml file has an invalid widget_wrapper configuration. '
+const invalidConfig =
+    'The pubspec.yaml file has an invalid widget_wrapper configuration. '
     'Visit https://pub.dev/packages/widget_wrapper for documentation how to setup widget_wrapper.';
 String invalidLibraryError(String package) =>
     'The specified "$package" library could not be found. '

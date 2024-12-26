@@ -40,7 +40,8 @@ void main() async {
     for (final isMocked in [true, false]) {
       group("mocked: ${isMocked}", () {
         test('must find pubspec.yaml', () async {
-          final testProject = await createTestProject(mockDependencies: isMocked);
+          final testProject =
+              await createTestProject(mockDependencies: isMocked);
           testProject.pubspec.deleteSync();
           final result = await commandRunner.run(['generate']);
           expect(result, equals(ExitCode.usage.code));
@@ -58,7 +59,8 @@ version: 0.0.1
         });
 
         test('bad widget_wrapper config', () async {
-          final testProject = await createTestProject(mockDependencies: isMocked);
+          final testProject =
+              await createTestProject(mockDependencies: isMocked);
 
           final badConfigs = [
             '''
@@ -118,7 +120,8 @@ widget_wrapper:
       - widget
 ''');
 
-          final result = await commandRunner.run(['generate', '--validate_config']);
+          final result =
+              await commandRunner.run(['generate', '--validate_config']);
           expect(result, equals(ExitCode.success.code));
         });
         test('bad library', () async {
@@ -132,7 +135,8 @@ widget_wrapper:
 ''',
               append: true);
 
-          final result = await commandRunner.run(['generate', "--validate_libraries"]);
+          final result =
+              await commandRunner.run(['generate', "--validate_libraries"]);
           expect(result, equals(ExitCode.usage.code));
           verify(() => logger.err(invalidLibraryError("flutter"))).called(1);
         });
@@ -149,7 +153,8 @@ widget_wrapper:
       - all
 ''',
               append: true);
-          final result = await commandRunner.run(['generate', "--validate_libraries"]);
+          final result =
+              await commandRunner.run(['generate', "--validate_libraries"]);
           expect(result, equals(ExitCode.success.code));
         });
 
@@ -167,11 +172,13 @@ widget_wrapper:
             final result = await commandRunner.run(['generate']);
             expect(result, equals(ExitCode.usage.code));
 
-            verify(() => logger.err(
-                widgetNotFound("package:shadcn_ui/shadcn_ui.dart", "invalid_widget"))).called(1);
+            verify(() => logger.err(widgetNotFound(
+                    "package:shadcn_ui/shadcn_ui.dart", "invalid_widget")))
+                .called(1);
           });
           test('single widget', () async {
-            final testProject = await createTestProject(mockDependencies: isMocked);
+            final testProject =
+                await createTestProject(mockDependencies: isMocked);
 
             testProject.pubspec.writeAsStringSync('''
 widget_wrapper:
@@ -187,7 +194,8 @@ widget_wrapper:
                 d.dir("src", [
                   d.dir("wrapped", [
                     d.dir("shadcn_ui", [
-                      d.file("shadcn_ui.dart", """import 'package:shadcn_ui/shadcn_ui.dart';
+                      d.file("shadcn_ui.dart",
+                          """import 'package:shadcn_ui/shadcn_ui.dart';
 
 class \$ShadButton extends StatelessWidget {
   \$ShadButton({required this.text});
@@ -206,7 +214,8 @@ class \$ShadButton extends StatelessWidget {
             }
           });
           test('all widget', () async {
-            final testProject = await createTestProject(mockDependencies: isMocked);
+            final testProject =
+                await createTestProject(mockDependencies: isMocked);
 
             testProject.pubspec.writeAsStringSync('''
 widget_wrapper:
@@ -218,7 +227,8 @@ widget_wrapper:
             expect(result, equals(ExitCode.success.code));
           });
           test('multi package', () async {
-            final testProject = await createTestProject(mockDependencies: isMocked);
+            final testProject =
+                await createTestProject(mockDependencies: isMocked);
 
             testProject.pubspec.writeAsStringSync('''
 widget_wrapper:
@@ -235,7 +245,8 @@ widget_wrapper:
                 d.dir("src", [
                   d.dir("wrapped", [
                     d.dir("shadcn_ui", [
-                      d.file("shadcn_ui.dart", """import 'package:shadcn_ui/shadcn_ui.dart';
+                      d.file("shadcn_ui.dart",
+                          """import 'package:shadcn_ui/shadcn_ui.dart';
 
 class \$ShadButton extends StatelessWidget {
   \$ShadButton({required this.text});
@@ -254,7 +265,8 @@ class \$ShadButton extends StatelessWidget {
             }
           });
           test('custom file', () async {
-            final testProject = await createTestProject(mockDependencies: isMocked);
+            final testProject =
+                await createTestProject(mockDependencies: isMocked);
 
             testProject.pubspec.writeAsStringSync('''
 widget_wrapper:
@@ -270,7 +282,8 @@ widget_wrapper:
                 d.dir("src", [
                   d.dir("widgets", [
                     d.dir("shadcn_ui", [
-                      d.file("shadcn_ui.dart", """import 'package:shadcn_ui/shadcn_ui.dart';
+                      d.file("shadcn_ui.dart",
+                          """import 'package:shadcn_ui/shadcn_ui.dart';
 
 class \$ShadButton extends StatelessWidget {
   \$ShadButton({required this.text});
@@ -289,7 +302,8 @@ class \$ShadButton extends StatelessWidget {
             }
           });
           test('with prefix', timeout: Timeout(Duration(minutes: 5)), () async {
-            final testProject = await createTestProject(mockDependencies: isMocked);
+            final testProject =
+                await createTestProject(mockDependencies: isMocked);
 
             testProject.pubspec.writeAsStringSync('''
 widget_wrapper:
@@ -333,12 +347,14 @@ class \$ShadButton extends _i1.StatelessWidget {
               ['analyze', "--fatal-infos"],
               workingDirectory: p.normalize(testProject.io.path),
             );
-            expect(analyzeResult.exitCode, equals(0), reason: analyzeResult.stderr);
+            expect(analyzeResult.exitCode, equals(0),
+                reason: analyzeResult.stderr);
           });
 
           if (isMocked) {
             test('custom prefix', () async {
-              final testProject = await createTestProject(mockDependencies: isMocked);
+              final testProject =
+                  await createTestProject(mockDependencies: isMocked);
 
               testProject.pubspec.writeAsStringSync('''
 widget_wrapper:
@@ -354,7 +370,8 @@ widget_wrapper:
                 d.dir("src", [
                   d.dir("wrapped", [
                     d.dir("shadcn_ui", [
-                      d.file("shadcn_ui.dart", """import 'package:shadcn_ui/shadcn_ui.dart';
+                      d.file("shadcn_ui.dart",
+                          """import 'package:shadcn_ui/shadcn_ui.dart';
 
 class MyShadButton extends StatelessWidget {
   MyShadButton({required this.text});
@@ -372,7 +389,8 @@ class MyShadButton extends StatelessWidget {
               ]).validate(testProject.io.path);
             });
             test('with docs', () async {
-              final testProject = await createTestProject(mockDependencies: isMocked);
+              final testProject =
+                  await createTestProject(mockDependencies: isMocked);
 
               testProject.pubspec.writeAsStringSync('''
 widget_wrapper:
@@ -388,7 +406,8 @@ widget_wrapper:
                 d.dir("src", [
                   d.dir("wrapped", [
                     d.dir("shadcn_ui", [
-                      d.file("shadcn_ui.dart", """import 'package:shadcn_ui/shadcn_ui.dart';
+                      d.file("shadcn_ui.dart",
+                          """import 'package:shadcn_ui/shadcn_ui.dart';
 
 /// Class Docs
 class \$ShadButton extends StatelessWidget {
@@ -571,7 +590,8 @@ dependencies:
 
   expect(result.exitCode, equals(0), reason: result.stderr);
   if (content != null) {
-    testProject.pubspec.writeAsStringSync(content, mode: append ? FileMode.append : FileMode.write);
+    testProject.pubspec.writeAsStringSync(content,
+        mode: append ? FileMode.append : FileMode.write);
   }
   return testProject;
 }

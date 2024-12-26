@@ -29,6 +29,7 @@ class RootConfig {
   @JsonKey(name: 'widget_wrapper')
   final Config widgetWrapper;
   RootConfig({required this.widgetWrapper});
-  factory RootConfig.fromJson(Map<dynamic, dynamic> json) => _$RootConfigFromJson(json);
+  factory RootConfig.fromJson(Map<dynamic, dynamic> json) =>
+      _$RootConfigFromJson(json);
   Map<String, dynamic> toJson() => _$RootConfigToJson(this);
 }

@@ -56,7 +56,8 @@ class WidgetVisitor extends RecursiveElementVisitor {
       // Only visit the libraries that are in the same package as the root library.
       if (element.source.uri.scheme == 'package' &&
           rootLibrary.source.uri.scheme == 'package' &&
-          element.source.uri.pathSegments.first == rootLibrary.source.uri.pathSegments.first) {
+          element.source.uri.pathSegments.first ==
+              rootLibrary.source.uri.pathSegments.first) {
         visitedLibraries.add(element);
         element.visitChildren(this);
       }
