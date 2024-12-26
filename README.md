@@ -1,39 +1,24 @@
+# Rabbit
 
+Rabbit helps you create these wrapper widgets quickly and consistently, maintaining all the original widget's parameters while allowing you to customize what you need.
 
-
-
-# Rabbit 🐰
-
-Instead of writing:
+For example, given a `Container` widget:
 ```dart
 Container(
   color: Colors.red,
   child: child,
 )
 ```
-Generate a `RedContainer` widget that encapsulates this styling:
+Generate a `RedContainer` widget that encapsulates this styling and reuse it throughout your app:
 ```dart
 RedContainer(
   child: child,
 )
 ```
 
-Rabbit helps you create these wrapper widgets quickly and consistently, maintaining all the original widget's parameters while allowing you to customize what you need.
-
-## Complaints
-
- - Eww, why would you want to do this? 
- - Why didn't you do it this way? 
- - Why didn't you use **blank** instead?
- - Why did you do it that way?
- - This isn't working, who made this garbage?
-
-You may have a good point, open an [issue](https://github.com/dickermoshe/rabbit/issues) and let me know.
-
 ## Table of Contents
 
-- [Rabbit 🐰](#rabbit-)
-  - [Complaints](#complaints)
+- [Rabbit](#rabbit)
   - [Table of Contents](#table-of-contents)
   - [Requirements](#requirements)
   - [Installation](#installation)
@@ -55,6 +40,7 @@ You may have a good point, open an [issue](https://github.com/dickermoshe/rabbit
     - [When to Use Wrappers](#when-to-use-wrappers)
     - [When Not to Use Wrappers](#when-not-to-use-wrappers)
     - [Naming Conventions](#naming-conventions)
+  - [Complaints](#complaints)
 
 ## Requirements
 
@@ -312,4 +298,14 @@ class LoadingButton extends StatelessWidget {
 - Use descriptive names that indicate the purpose
 - Follow Flutter's widget naming conventions
 - Consider grouping related wrappers
-```
+
+
+## Complaints
+
+ - Eww, why would you want to do this? 
+ - Why didn't you do it this way? 
+ - Why didn't you use **blank** instead?
+ - Why did you do it that way?
+ - This isn't working, who made this garbage?
+
+You may have a good point, open an [issue](https://github.com/dickermoshe/rabbit/issues) and let me know.

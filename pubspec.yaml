@@ -1,6 +1,6 @@
 name: rabbit
 description: Rabbit helps you create these wrapper widgets quickly and consistently, maintaining all the original widget's parameters while allowing you to customize what you need.
-version: 0.0.1
+version: 0.0.2
 homepage: https://github.com/dickermoshe/rabbit
 repository: https://github.com/dickermoshe/rabbit
 
