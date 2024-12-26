@@ -1,4 +1,5 @@
 @Tags(['version-verify'])
+@Timeout(Duration(minutes: 2))
 library;
 
 import 'package:build_verify/build_verify.dart';
