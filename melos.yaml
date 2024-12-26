@@ -1,6 +1,0 @@
-name: widget_pipes
-
-packages:
-  - .
-  - test_projects/flutter
-  - test_projects/mock_flutter
