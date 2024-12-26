@@ -4,7 +4,7 @@ import 'package:mason_logger/mason_logger.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:pub_updater/pub_updater.dart';
 import 'package:test/test.dart';
-import 'package:widget_wrapper/src/commands/update_command.dart';
+import 'package:rabbit/src/commands/update_command.dart';
 import '../../../lib/src/command_runner.dart';
 import '../../../lib/src/version.dart';
 

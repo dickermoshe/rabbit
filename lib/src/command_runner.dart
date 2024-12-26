@@ -3,23 +3,23 @@ import 'package:args/command_runner.dart';
 import 'package:cli_completion/cli_completion.dart';
 import 'package:mason_logger/mason_logger.dart';
 import 'package:pub_updater/pub_updater.dart';
-import 'package:widget_wrapper/src/commands/generate_command.dart';
-import 'package:widget_wrapper/src/commands/update_command.dart';
-import 'package:widget_wrapper/src/version.dart';
+import 'package:rabbit/src/commands/generate_command.dart';
+import 'package:rabbit/src/commands/update_command.dart';
+import 'package:rabbit/src/version.dart';
 
-const executableName = 'widget_wrapper';
-const packageName = 'widget_wrapper';
+const executableName = 'rabbit';
+const packageName = 'rabbit';
 const description = 'Customize you favorite widgets by wrapping them.';
 
-/// {@template widget_wrapper_command_runner}
+/// {@template rabbit_command_runner}
 /// A [CommandRunner] for the CLI.
 ///
 /// ```bash
-/// $ widget_wrapper --version
+/// $ rabbit --version
 /// ```
 /// {@endtemplate}
 class WidgetWrapperCommandRunner extends CompletionCommandRunner<int> {
-  /// {@macro widget_wrapper_command_runner}
+  /// {@macro rabbit_command_runner}
   WidgetWrapperCommandRunner({
     Logger? logger,
     PubUpdater? pubUpdater,

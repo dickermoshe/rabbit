@@ -1,10 +1,10 @@
-/// widget_wrapper, Customize you favorite widgets by wrapping them.
+/// rabbit, Customize you favorite widgets by wrapping them.
 ///
 /// ```sh
-/// # activate widget_wrapper
-/// dart pub global activate widget_wrapper
+/// # activate rabbit
+/// dart pub global activate rabbit
 ///
 /// # see usage
-/// widget_wrapper --help
+/// rabbit --help
 /// ```
 library;

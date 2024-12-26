@@ -6,8 +6,8 @@ import 'package:mason_logger/mason_logger.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:pub_updater/pub_updater.dart';
 import 'package:test/test.dart';
-import 'package:widget_wrapper/src/command_runner.dart';
-import 'package:widget_wrapper/src/version.dart';
+import 'package:rabbit/src/command_runner.dart';
+import 'package:rabbit/src/version.dart';
 
 class _MockLogger extends Mock implements Logger {}
 

@@ -5,8 +5,8 @@ import 'dart:io';
 import 'package:mason_logger/mason_logger.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
-import 'package:widget_wrapper/src/command_runner.dart';
-import 'package:widget_wrapper/src/commands/messages.dart';
+import 'package:rabbit/src/command_runner.dart';
+import 'package:rabbit/src/commands/messages.dart';
 import 'package:path/path.dart' as p;
 import 'package:test_descriptor/test_descriptor.dart' as d;
 
@@ -52,7 +52,7 @@ void main() async {
 
         test('must have flutter', () async {
           await createTestProject(mockDependencies: isMocked, content: '''
-name: widget_wrapper
+name: rabbit
 version: 0.0.1
 ''');
           final result = await commandRunner.run(['generate']);
@@ -60,43 +60,43 @@ version: 0.0.1
           verify(() => logger.err(flutterMissingError)).called(1);
         });
 
-        test('bad widget_wrapper config', () async {
+        test('bad rabbit config', () async {
           final testProject =
               await createTestProject(mockDependencies: isMocked);
 
           final badConfigs = [
             '''
-name: widget_wrapper
+name: rabbit
 version: 0.0.1
 dependencies:
   flutter:
     path: flutter
 ''',
             '''
-name: widget_wrapper
+name: rabbit
 version: 0.0.1
 dependencies:
   flutter:
     path: flutter
-widget_wrapper:
+rabbit:
 ''',
             '''
-name: widget_wrapper
+name: rabbit
 version: 0.0.1
 dependencies:
   flutter:
     path: flutter
-widget_wrapper:
+rabbit:
   widgets:
     1: invalid_widget
 ''',
             '''
-name: widget_wrapper
+name: rabbit
 version: 0.0.1
 dependencies:
   flutter:
     path: flutter
-widget_wrapper:
+rabbit:
   widgets:
     hllo: invalid_widget
 '''
@@ -110,13 +110,13 @@ widget_wrapper:
         });
         test('good config', () async {
           await createTestProject(mockDependencies: isMocked, content: '''
-name: widget_wrapper
+name: rabbit
 version: 0.0.1
 dependencies:
   flutter:
     path: flutter
 
-widget_wrapper:
+rabbit:
   widgets:
     hello:
       - widget
@@ -130,7 +130,7 @@ widget_wrapper:
           await createTestProject(
               mockDependencies: isMocked,
               content: '''
-widget_wrapper:
+rabbit:
   widgets:
     flutter:
       - invalid_widget
@@ -147,7 +147,7 @@ widget_wrapper:
           await createTestProject(
               mockDependencies: isMocked,
               content: '''
-widget_wrapper:
+rabbit:
   widgets:
     package:flutter/material.dart:
       - foo
@@ -165,7 +165,7 @@ widget_wrapper:
             await createTestProject(
                 mockDependencies: isMocked,
                 content: '''
-widget_wrapper:
+rabbit:
   widgets:
     "package:shadcn_ui/shadcn_ui.dart":
       - invalid_widget
@@ -183,7 +183,7 @@ widget_wrapper:
                 await createTestProject(mockDependencies: isMocked);
 
             testProject.pubspec.writeAsStringSync('''
-widget_wrapper:
+rabbit:
   widgets:
     package:shadcn_ui/shadcn_ui.dart:
       - ShadButton
@@ -194,7 +194,7 @@ widget_wrapper:
             if (isMocked) {
               await d.dir("lib", [
                 d.dir("src", [
-                  d.dir("wrapped", [
+                  d.dir("rabbit", [
                     d.dir("shadcn_ui", [
                       d.file("shadcn_ui.dart",
                           """import 'package:shadcn_ui/shadcn_ui.dart';
@@ -220,7 +220,7 @@ class \$ShadButton extends StatelessWidget {
                 await createTestProject(mockDependencies: isMocked);
 
             testProject.pubspec.writeAsStringSync('''
-widget_wrapper:
+rabbit:
   widgets:
     package:flutter/material.dart:
       - all
@@ -233,7 +233,7 @@ widget_wrapper:
                 await createTestProject(mockDependencies: isMocked);
 
             testProject.pubspec.writeAsStringSync('''
-widget_wrapper:
+rabbit:
   widgets:
     package:flutter/material.dart:
       - all
@@ -245,7 +245,7 @@ widget_wrapper:
             if (isMocked) {
               await d.dir("lib", [
                 d.dir("src", [
-                  d.dir("wrapped", [
+                  d.dir("rabbit", [
                     d.dir("shadcn_ui", [
                       d.file("shadcn_ui.dart",
                           """import 'package:shadcn_ui/shadcn_ui.dart';
@@ -271,7 +271,7 @@ class \$ShadButton extends StatelessWidget {
                 await createTestProject(mockDependencies: isMocked);
 
             testProject.pubspec.writeAsStringSync('''
-widget_wrapper:
+rabbit:
   output_dir: lib/src/widgets
   widgets:
     package:shadcn_ui/shadcn_ui.dart:
@@ -308,8 +308,8 @@ class \$ShadButton extends StatelessWidget {
                 await createTestProject(mockDependencies: isMocked);
 
             testProject.pubspec.writeAsStringSync('''
-widget_wrapper:
-  import_prefix: true
+rabbit:
+  add_imports: true
   widgets:
     package:shadcn_ui/shadcn_ui.dart:
       - ShadButton
@@ -320,7 +320,7 @@ widget_wrapper:
             if (isMocked) {
               await d.dir("lib", [
                 d.dir("src", [
-                  d.dir("wrapped", [
+                  d.dir("rabbit", [
                     d.dir("shadcn_ui", [
                       d.file("shadcn_ui.dart",
                           """// ignore_for_file: no_leading_underscores_for_library_prefixes
@@ -359,7 +359,7 @@ class \$ShadButton extends _i1.StatelessWidget {
                   await createTestProject(mockDependencies: isMocked);
 
               testProject.pubspec.writeAsStringSync('''
-widget_wrapper:
+rabbit:
   prefix: My
   widgets:
     package:shadcn_ui/shadcn_ui.dart:
@@ -370,7 +370,7 @@ widget_wrapper:
 
               await d.dir("lib", [
                 d.dir("src", [
-                  d.dir("wrapped", [
+                  d.dir("rabbit", [
                     d.dir("shadcn_ui", [
                       d.file("shadcn_ui.dart",
                           """import 'package:shadcn_ui/shadcn_ui.dart';
@@ -395,7 +395,7 @@ class MyShadButton extends StatelessWidget {
                   await createTestProject(mockDependencies: isMocked);
 
               testProject.pubspec.writeAsStringSync('''
-widget_wrapper:
+rabbit:
   docs: true
   widgets:
     package:shadcn_ui/shadcn_ui.dart:
@@ -406,7 +406,7 @@ widget_wrapper:
 
               await d.dir("lib", [
                 d.dir("src", [
-                  d.dir("wrapped", [
+                  d.dir("rabbit", [
                     d.dir("shadcn_ui", [
                       d.file("shadcn_ui.dart",
                           """import 'package:shadcn_ui/shadcn_ui.dart';

@@ -12,12 +12,12 @@ import 'package:code_builder/code_builder.dart' as cb;
 import 'package:dart_style/dart_style.dart';
 import 'package:mason_logger/mason_logger.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
-import 'package:widget_wrapper/src/commands/messages.dart';
-import 'package:widget_wrapper/src/config.dart';
-import 'package:widget_wrapper/src/utils/progress_isolate.dart';
+import 'package:rabbit/src/commands/messages.dart';
+import 'package:rabbit/src/config.dart';
+import 'package:rabbit/src/utils/progress_isolate.dart';
 import 'package:path/path.dart' as p;
-import 'package:widget_wrapper/src/utils/reference_resolver.dart';
-import 'package:widget_wrapper/src/utils/widet_visitor.dart';
+import 'package:rabbit/src/utils/reference_resolver.dart';
+import 'package:rabbit/src/utils/widet_visitor.dart';
 import 'package:collection/collection.dart';
 
 import 'package:recase/recase.dart';
@@ -92,7 +92,7 @@ class AddWidgetCommand extends Command<int> {
 
     /// Setup the user project and parse the pubspec.yaml file.
     /// Validate that the project is a valid Flutter project and that
-    /// it has a valid widget_wrapper configuration.
+    /// it has a valid rabbit configuration.
     final currentDir = Directory.current;
     final pubspecFile = File(p.join(currentDir.path, 'pubspec.yaml'));
     if (!pubspecFile.existsSync()) {
@@ -210,7 +210,7 @@ class AddWidgetCommand extends Command<int> {
           // The body will be empty if this is the first time we are adding to the library.
           // This ensures that the import directive is added to the top of the file.
           // Alos, only add import if we arent using code_builders import prefixes
-          if (library.body.isEmpty && !config.importPrefix) {
+          if (library.body.isEmpty && !config.addImports) {
             final libraryUris = {
               package.library.source.uri.toString(),
               wElement.library.source.uri.toString()
@@ -382,7 +382,7 @@ class AddWidgetCommand extends Command<int> {
       file.createSync(recursive: true);
 
       final cb.DartEmitter emitter;
-      if (config.importPrefix) {
+      if (config.addImports) {
         emitter = cb.DartEmitter.scoped(useNullSafetySyntax: true);
       } else {
         emitter = cb.DartEmitter(useNullSafetySyntax: true);

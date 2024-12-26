@@ -10,14 +10,14 @@ class Config {
   @JsonKey(name: 'output_dir')
   final String outputDir;
   final bool docs;
-  @JsonKey(name: 'import_prefix')
-  final bool importPrefix;
+  @JsonKey(name: 'add_imports')
+  final bool addImports;
   Config({
     this.prefix = "\$",
     this.widgets = const {},
-    this.outputDir = "lib/src/wrapped",
+    this.outputDir = "lib/src/rabbit",
     this.docs = false,
-    this.importPrefix = false,
+    this.addImports = false,
   });
 
   factory Config.fromJson(Map<dynamic, dynamic> json) => _$ConfigFromJson(json);
@@ -26,7 +26,7 @@ class Config {
 
 @JsonSerializable()
 class RootConfig {
-  @JsonKey(name: 'widget_wrapper')
+  @JsonKey(name: 'rabbit')
   final Config widgetWrapper;
   RootConfig({required this.widgetWrapper});
   factory RootConfig.fromJson(Map<dynamic, dynamic> json) =>

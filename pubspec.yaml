@@ -1,4 +1,4 @@
-name: widget_wrapper
+name: rabbit
 description: Customize you favorite widgets by wrapping them.
 version: 0.0.1
 publish_to: none
@@ -34,4 +34,4 @@ dev_dependencies:
   test_descriptor: ^2.0.2
 
 executables:
-  widget_wrapper:
+  rabbit:
