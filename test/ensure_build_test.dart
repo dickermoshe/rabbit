@@ -1,4 +1,3 @@
-@Timeout(Duration(minutes: 2))
 @Tags(['version-verify'])
 library;
 
@@ -6,5 +5,6 @@ import 'package:build_verify/build_verify.dart';
 import 'package:test/test.dart';
 
 void main() {
-  test('ensure_build', expectBuildClean);
+  test('ensure_build', expectBuildClean,
+      timeout: Timeout(Duration(minutes: 2)));
 }
