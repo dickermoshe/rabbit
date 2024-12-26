@@ -64,14 +64,14 @@ jobs:
       - name: 📚 Git Checkout
         uses: actions/checkout@v4
 
-      - name: 🎯 Setup Dart
-        uses: dart-lang/setup-dart@v1
+      - name: 🐦 Setup Flutter
+        uses: subosito/flutter-action@v2
         with:
-          sdk: "stable"
+          channel: "stable"
 
       - name: 📦 Install Dependencies
         run: |
-          dart pub get --no-precompile
+          dart pub get
 
       - name: 🔎 Verify version
         run: dart run test --run-skipped -t version-verify
