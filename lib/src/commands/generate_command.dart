@@ -1,3 +1,4 @@
+// dart format width=120
 import 'dart:async';
 import 'dart:io';
 
@@ -5,22 +6,21 @@ import 'package:analyzer/dart/analysis/analysis_context.dart';
 import 'package:analyzer/dart/analysis/analysis_context_collection.dart';
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/element/element.dart';
-import 'package:analyzer/dart/element/nullability_suffix.dart';
-import 'package:analyzer/dart/element/type.dart';
-import 'package:analyzer/dart/element/type_system.dart';
-import 'package:analyzer/dart/element/visitor.dart';
 import 'package:args/command_runner.dart';
 import 'package:checked_yaml/checked_yaml.dart';
 import 'package:code_builder/code_builder.dart' as cb;
+import 'package:dart_style/dart_style.dart';
 import 'package:mason_logger/mason_logger.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:widget_wrapper/src/commands/messages.dart';
 import 'package:widget_wrapper/src/config.dart';
 import 'package:widget_wrapper/src/utils/progress_isolate.dart';
 import 'package:path/path.dart' as p;
-import 'package:yaml/yaml.dart';
+import 'package:widget_wrapper/src/utils/reference_resolver.dart';
+import 'package:widget_wrapper/src/utils/widet_visitor.dart';
+import 'package:collection/collection.dart';
+
 import 'package:recase/recase.dart';
-import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 class AddWidgetCommand extends Command<int> {
   AddWidgetCommand({
@@ -39,6 +39,12 @@ class AddWidgetCommand extends Command<int> {
           'This will not generate any files.',
       defaultsTo: false,
       hide: true,
+    );
+    argParser.addFlag(
+      'force',
+      help: 'Overwrite the existing files if they exist.',
+      defaultsTo: false,
+      abbr: 'f',
     );
     argParser.addFlag(
       'validate_widgets',
@@ -75,6 +81,8 @@ class AddWidgetCommand extends Command<int> {
 
   @override
   Future<int> run() async {
+    final stopper = await _logger.isolateProgress("Reading configuration");
+
     /// Due to a bug in the Flutter SDK, the `flutter` executable is not able to
     /// run this command. This will warn the user if they are using the `flutter`
     if (p.basenameWithoutExtension(Platform.executable).endsWith('flutter')) {
@@ -93,7 +101,6 @@ class AddWidgetCommand extends Command<int> {
     }
 
     final pubspecText = pubspecFile.readAsStringSync();
-
     final pubspec = Pubspec.parse(pubspecText);
 
     if (!pubspec.dependencies.containsKey('flutter')) {
@@ -102,12 +109,14 @@ class AddWidgetCommand extends Command<int> {
     }
     final Config config;
     try {
-      config = checkedYamlDecode(
-          pubspecText, (p0) => RootConfig.fromJson(p0!).widgetWrapper);
+      config = checkedYamlDecode(pubspecText, (p0) => RootConfig.fromJson(p0!).widgetWrapper);
     } catch (e, s) {
-      _logError(parsePubspecError, e, s);
+      _logError(invalidConfig, e, s);
       return ExitCode.usage.code;
     }
+    final outputDir = Directory(p.join(Directory.current.path, config.outputDir));
+    outputDir.createSync(recursive: true);
+    await stopper.stop();
 
     /// If the `validate_config` flag is set, then we will return early.
     if (argResults!['validate_config'] as bool) {
@@ -117,15 +126,13 @@ class AddWidgetCommand extends Command<int> {
     /// Create the analysis context and locate the libraries for the widgets.
     final context = await createContext(p.normalize(currentDir.path));
     final packages = <Package>[];
-    for (final MapEntry(key: package, value: widgetNames)
-        in config.widgets.entries) {
+    _logger.info('Parsing packages:');
+    for (final MapEntry(key: package, value: widgetNames) in config.widgets.entries) {
       try {
         /// Locate the library for the package.
-        final stopper = await _logger.isolateProgress(
-          'Parsing package: ${package}',
-        );
-        final result = (await context.currentSession.getLibraryByUri(package)
-            as LibraryElementResult);
+        final stopper = await _logger.isolateProgress(package);
+        final result =
+            (await context.currentSession.getLibraryByUri(package) as LibraryElementResult);
         final library = result.element;
         packages.add(Package(library: library, widgetNames: widgetNames));
         await stopper.stop();
@@ -139,274 +146,230 @@ class AddWidgetCommand extends Command<int> {
     if (argResults!['validate_libraries'] as bool) {
       return ExitCode.success.code;
     }
+    final widgetLocatorStopper = await _logger.isolateProgress("Locating widgets");
 
     /// Locate the classes for the widgets.
     for (final package in packages) {
       /// Visit the library to find all widgets.
-      final visitor =
-          WidgetVisitor(context: context, rootLibrary: package.library);
+      final visitor = WidgetVisitor(context: context, rootLibrary: package.library);
       package.library.accept(visitor);
 
       if (package.all) {
         package.classes.addAll(visitor.seenWidgets);
-      } else {}
+      } else {
+        /// Find the widget elements that match the widget names.
+        for (var widgetName in package.widgetNames) {
+          /// Find the widget element that matches the widget name.
+          final ClassElement widgetElement;
+          final matchedClasses =
+              visitor.seenWidgets.where((element) => element.name == widgetName).toSet();
 
-      /// Find the widget elements that match the widget names.
-      for (var widgetName in package.widgetNames) {
-        /// Find the widget element that matches the widget name.
-        final ClassElement widgetElement;
-        final matchedClasses = visitor.seenWidgets
-            .where((element) => element.name == widgetName)
-            .toSet();
+          /// If the widget is not found, then we will return early.
+          if (matchedClasses.isEmpty) {
+            _logger.err(widgetNotFound(package.library.source.uri.toString(), widgetName));
+            return ExitCode.usage.code;
+          }
 
-        /// If the widget is not found, then we will return early.
-        if (matchedClasses.isEmpty) {
-          _logger.err(widgetNotFound(
-              package.library.source.uri.toString(), widgetName));
-          return ExitCode.usage.code;
+          /// If there are multiple widgets with the same name, then we will choose one.
+          if (matchedClasses.length > 1) {
+            widgetElement = _logger.chooseOne(
+                "Found mutiple matches for $widgetName in ${package.library.source.uri.toString()}:",
+                display: (e) => "${e.name} : ${e.library.source.uri}",
+                choices: matchedClasses.toList());
+          } else {
+            // If there is only one widget, then we will use that one.
+            widgetElement = matchedClasses.first;
+          }
+          package.classes.add(widgetElement);
         }
-
-        /// If there are multiple widgets with the same name, then we will choose one.
-        if (matchedClasses.length > 1) {
-          widgetElement = _logger.chooseOne(
-              "Found mutiple matches for $widgetName in ${package.library.source.uri.toString()}:",
-              display: (e) => "${e.name} : ${e.library.source.uri}",
-              choices: matchedClasses.toList());
-        } else {
-          /// If there is only one widget, then we will use that one.
-
-          widgetElement = matchedClasses.first;
-        }
-        package.classes.add(widgetElement);
       }
     }
+    widgetLocatorStopper.stop();
 
     /// If the `validate_widgets` flag is set, then we will return early.
     if (argResults!['validate_widgets'] as bool) {
       return ExitCode.success.code;
     }
 
-    /// Parse the constructors for the widget.
-    final library = cb.Library((b) {
-      final Package(classes: classes, library: library) = packages.first;
-      b.name = library.name;
+    final genCodeStopper = await _logger.isolateProgress("Generating code");
 
-      for (final wElement in classes) {
-        b.body.add(cb.Class(
-          (c) {
-            c.name = config.prefix + wElement.name.pascalCase;
-            c.extend =
-                cb.refer('StatelessWidget', 'package:flutter/widgets.dart');
+    final results = <String, cb.Library>{};
+    for (final package in packages) {
+      for (final wElement in package.classes) {
+        final path =
+            p.normalize(p.joinAll([outputDir.path, ...wElement.library.source.uri.pathSegments]));
+        final library = (results[path] ?? cb.Library()).toBuilder();
+        for (final conElement in wElement.constructors) {
+          // Only add the imports once
+          if (library.body.isEmpty) {
+            library.body.add(cb.Directive.import(package.library.source.uri.toString()));
+            library.body.add(cb.Directive.import(wElement.library.source.uri.toString()));
+          }
 
-            c.methods.add(cb.Method((m) {
-              m.name = 'build';
-              m.returns = cb.refer('Widget', 'package:flutter/widgets.dart');
-              m.requiredParameters.add(cb.Parameter((p) {
-                p.name = 'context';
-                p.type =
-                    cb.refer('BuildContext', 'package:flutter/widgets.dart');
-              }));
-              m.body = cb.Block.of([
-                cb.Code('return'),
-                cb.Code.scope((a) {
-                  return a(
-                      cb.refer(wElement.name, library.source.uri.toString()));
-                }),
-                cb.Code('();'),
-              ]);
-            }));
+          library.body.add(cb.Class(
+            (c) {
+              // The class name uses the prefix from the config
+              // and adds the constructor if there is one
+              // e.g SizedBox.square => $SizedBoxSquare
+              c.name = config.prefix + wElement.name.pascalCase + conElement.name.pascalCase;
+              c.extend = cb.refer('StatelessWidget', 'package:flutter/widgets.dart');
 
-            c.constructors.add(cb.Constructor((cc) {
-              for (final pElement in wElement.unnamedConstructor!.parameters) {
-                final parameter = cb.Parameter((p) {
-                  p.name = pElement.name;
-                  p.named = pElement.isNamed;
-                  p.toThis = true;
-                });
-                if (pElement.isRequired) {
-                  cc.requiredParameters.add(parameter);
-                } else {
-                  cc.optionalParameters.add(parameter);
-                }
-                c.fields.add(cb.Field((f) {
-                  f.name = parameter.name;
-                  f.type = _typeReference(pElement.type, library.typeSystem);
-                  f.modifier = cb.FieldModifier.final$;
-                }));
+              // Copy the documentation from the widget to the class
+              if (wElement.documentationComment != null) {
+                c.docs.add(wElement.documentationComment!);
               }
-            }));
-          },
-        ));
+
+              /// Add the type parameters to the class.
+              wElement.typeParameters.forEach((element) {
+                c.types.add(cb.TypeReference((tr) {
+                  tr.symbol = element.name;
+                  if (element.bound != null) {
+                    tr.bound = typeReference(element.bound!, package.library.typeSystem);
+                  }
+                }));
+              });
+
+              // Ignore parameters that are deprecated.
+              final parameters = conElement.parameters.filterDeprecated();
+
+              // Create the constructor for the widget.
+              c.constructors.add(cb.Constructor((cc) {
+                // Copy the documentation from the constructor to the class
+                if (conElement.documentationComment != null) {
+                  cc.docs.add(conElement.documentationComment!);
+                }
+
+                // Add the parameters to the constructor.
+                for (var pElement in parameters) {
+                  /// If the constructor is a redirecting constructor, then we will
+                  /// get that parameter for the redirected constructor parameter.
+                  /// That paramter will have more accurate information about the field.
+                  ParameterElement? redirectedParameter;
+                  if (conElement.redirectedConstructor != null) {
+                    final redirectedParameters = conElement.redirectedConstructor!.parameters;
+                    redirectedParameter = redirectedParameters.firstWhereOrNull(
+                      (element) => element.name == pElement.name,
+                    );
+                  } else {
+                    redirectedParameter = null;
+                  }
+
+                  final type = typeReference(pElement.type, package.library.typeSystem);
+                  final isRequired = switch (type) {
+                    cb.TypeReference typeRef => typeRef.isNullable == false,
+                    cb.FunctionType typeFunc => typeFunc.isNullable == false,
+                    cb.RecordType typeRec => typeRec.isNullable == false,
+                    _ => false,
+                  };
+
+                  final keywordRequired = pElement.isNamed && isRequired;
+                  final positionalRequired = pElement.isPositional && isRequired;
+
+                  final parameter = cb.Parameter((p) {
+                    p.name = pElement.name;
+                    p.named = pElement.isNamed;
+                    // This only controls the "required" keyword in the constructor.
+                    p.required = keywordRequired;
+                    p.toThis = true;
+                    // Copy the documentation from the parameter to the class
+                    // The redirected parameter has more accurate information
+                    if ((redirectedParameter ?? pElement).documentationComment != null) {
+                      p.docs.add(pElement.documentationComment!);
+                    }
+                  });
+
+                  // This only control whether or not the arguemnt
+                  // is places in brackets/curlies in the constructor.
+                  if (positionalRequired) {
+                    cc.requiredParameters.add(parameter);
+                  } else {
+                    cc.optionalParameters.add(parameter);
+                  }
+
+                  c.fields.add(cb.Field((f) {
+                    f.name = parameter.name;
+                    f.type = type;
+                    f.modifier = cb.FieldModifier.final$;
+
+                    // Copy the documentation from the field to the class
+                    // The redirected parameter has more accurate information
+                    final docs = _fieldFromParameter(redirectedParameter ?? pElement)
+                        ?.field
+                        ?.documentationComment;
+
+                    if (docs != null) {
+                      f.docs.add(docs);
+                    }
+                  }));
+                }
+              }));
+
+              /// Create the build method for the widget.
+              c.methods.add(cb.Method((m) {
+                m.name = 'build';
+                m.returns = cb.refer('Widget', 'package:flutter/widgets.dart');
+                m.requiredParameters.add(cb.Parameter((p) {
+                  p.name = 'context';
+                  p.type = cb.refer('BuildContext', 'package:flutter/widgets.dart');
+                }));
+
+                final positionalArgs = parameters
+                    .where((element) => element.isPositional)
+                    .map((e) => cb.refer(e.name));
+                final namedArgs = Map.fromEntries(parameters
+                    .where((element) => element.isNamed)
+                    .map((e) => MapEntry(e.name, cb.refer(e.name))));
+
+                final conReference =
+                    cb.refer(wElement.name, wElement.library.source.uri.toString());
+                final cb.Expression conExression;
+                if (conElement.name.isNotEmpty) {
+                  conExression =
+                      conReference.newInstanceNamed(conElement.name, positionalArgs, namedArgs);
+                } else {
+                  conExression = conReference.newInstance(positionalArgs, namedArgs);
+                }
+
+                m.body = cb.Block.of([
+                  cb.Code('return'),
+                  conExression.code,
+                  cb.Code(';'),
+                ]);
+              }));
+            },
+          ));
+        }
+
+        results[path] = library.build();
       }
-    });
-    final emitter = cb.DartEmitter.scoped();
-    final output = library.accept(emitter).toString();
-    // TODO: replace
-    File(p.join(currentDir.path, 'lib', 'output.dart'))
-        .writeAsStringSync(output);
-    _logger.success(output);
+    }
+    genCodeStopper.stop();
+    final writeCodeStopper = await _logger.isolateProgress("Writing to disk");
+
+    for (final e in results.entries) {
+      final file = File(e.key);
+      if (file.existsSync() && !(argResults!['force'] as bool)) {
+        _logger.warn(overwriteFileError(file: file.path));
+        continue;
+      }
+      file.createSync(recursive: true);
+
+      final cb.DartEmitter emitter;
+      if (config.importPrefix) {
+        emitter = cb.DartEmitter.scoped(useNullSafetySyntax: true);
+      } else {
+        emitter = cb.DartEmitter(useNullSafetySyntax: true);
+      }
+
+      final rawCode = e.value.accept(emitter).toString();
+      final formattedCode =
+          DartFormatter(languageVersion: DartFormatter.latestLanguageVersion).format(rawCode);
+      file.writeAsStringSync(formattedCode);
+    }
+    writeCodeStopper.stop();
     return ExitCode.success.code;
   }
 }
-
-/// A class which will find all the widgets in a package.
-class WidgetVisitor extends RecursiveElementVisitor {
-  /// The root library that the visitor started from.
-  final LibraryElement rootLibrary;
-
-  /// The analysis context for the project.
-  final AnalysisContext context;
-
-  WidgetVisitor({required this.context, required this.rootLibrary});
-
-  /// This will contain all the widgets that have been found once the visitor has finished.
-  final Set<ClassElement> seenWidgets = <ClassElement>{};
-
-  /// This will check if the element is a widget.
-  final _widgetChecker = TypeChecker.fromName('Widget', packageName: 'flutter');
-
-  /// The libraries that have been visited. This is to prevent visiting the same library multiple times.
-  final visitedLibraries = <LibraryElement>{};
-
-  @override
-  dynamic visitClassElement(ClassElement element) {
-    final isWidget = _widgetChecker.isAssignableFrom(element);
-    if (isWidget &&
-        element.isPublic &&
-        !element.isAbstract &&
-        element.isConstructable &&
-        !seenWidgets.contains(element) &&
-        element.unnamedConstructor != null) {
-      seenWidgets.add(element);
-    }
-
-    return super.visitClassElement(element);
-  }
-
-  @override
-  dynamic visitLibraryImportElement(LibraryImportElement element) {
-    visitLibrary(element.importedLibrary);
-
-    return super.visitLibraryImportElement(element);
-  }
-
-  @override
-  dynamic visitLibraryExportElement(LibraryExportElement element) {
-    visitLibrary(element.exportedLibrary);
-
-    return super.visitLibraryExportElement(element);
-  }
-
-  visitLibrary(LibraryElement? element) {
-    if (element != null && !visitedLibraries.contains(element)) {
-      // Only visit the libraries that are in the same package as the root library.
-      if (element.source.uri.scheme == 'package' &&
-          rootLibrary.source.uri.scheme == 'package' &&
-          element.source.uri.pathSegments.first ==
-              rootLibrary.source.uri.pathSegments.first) {
-        visitedLibraries.add(element);
-        element.visitChildren(this);
-      }
-    }
-  }
-}
-
-/////////////////////////////////////////////////////
-/// The below has been copied form te Mockito package.
-/////////////////////////////////////////////////////
-cb.Reference _typeReference(DartType type, TypeSystem typeSystem,
-    {bool forceNullable = false, bool overrideVoid = false}) {
-  if (overrideVoid && type is VoidType) {
-    return cb.TypeReference((b) => b..symbol = 'dynamic');
-  }
-  if (type is InvalidType) {
-    return cb.TypeReference((b) => b..symbol = 'dynamic');
-  }
-  if (type is InterfaceType) {
-    return cb.TypeReference((b) {
-      b
-        ..symbol = type.element.name
-        ..isNullable = !type.isDartCoreNull &&
-            (forceNullable ||
-                type.nullabilitySuffix == NullabilitySuffix.question)
-        ..url = _typeImport(type.element)
-        ..types.addAll(
-            type.typeArguments.map((e) => _typeReference(e, typeSystem)));
-    });
-  } else if (type is FunctionType) {
-    final alias = type.alias;
-    if (alias == null || alias.element.isPrivate) {
-      // [type] does not refer to a type alias, or it refers to a private type
-      // alias; we must instead write out its signature.
-      return cb.FunctionType((b) =>
-          // _withTypeParameters(type.typeFormals,
-          () {
-            b
-              ..isNullable =
-                  forceNullable || typeSystem.isPotentiallyNullable(type)
-              ..returnType = _typeReference(type.returnType, typeSystem)
-              ..requiredParameters.addAll(type.normalParameterTypes
-                  .map((e) => _typeReference(e, typeSystem)))
-              ..optionalParameters.addAll(type.optionalParameterTypes
-                  .map((e) => _typeReference(e, typeSystem)));
-            for (final parameter
-                in type.parameters.where((p) => p.isOptionalNamed)) {
-              b.namedParameters[parameter.name] =
-                  _typeReference(parameter.type, typeSystem);
-            }
-            for (final parameter
-                in type.parameters.where((p) => p.isRequiredNamed)) {
-              b.namedRequiredParameters[parameter.name] =
-                  _typeReference(parameter.type, typeSystem);
-            }
-          }());
-      // );
-    }
-    return cb.TypeReference((b) {
-      b
-        ..symbol = alias.element.name
-        ..url = _typeImport(alias.element)
-        ..isNullable = forceNullable || typeSystem.isNullable(type);
-      for (final typeArgument in alias.typeArguments) {
-        b.types.add(_typeReference(typeArgument, typeSystem));
-      }
-    });
-  } else if (type is TypeParameterType) {
-    return cb.TypeReference((b) {
-      b
-        ..symbol = type.element.name
-        ..isNullable = forceNullable || typeSystem.isNullable(type);
-    });
-  } else if (type is RecordType) {
-    return cb.RecordType((b) => b
-      ..positionalFieldTypes.addAll([
-        for (final f in type.positionalFields)
-          _typeReference(f.type, typeSystem)
-      ])
-      ..namedFieldTypes.addAll({
-        for (final f in type.namedFields)
-          f.name: _typeReference(f.type, typeSystem)
-      })
-      ..isNullable = forceNullable || typeSystem.isNullable(type));
-  } else {
-    return cb.refer(type.getDisplayString(), _typeImport(type.element));
-  }
-}
-
-String? _typeImport(
-  Element? element,
-) {
-  // For type variables, no import needed.
-  if (element is TypeParameterElement) return null;
-
-  // For types like `dynamic`, return null; no import needed.
-  if (element?.library == null) return null;
-  return element!.library!.source.uri.toString();
-}
-
-/////////////////////////////////////////////////////
-/// The above has been copied form te Mockito package.
-/////////////////////////////////////////////////////
 
 class Package {
   Package({
@@ -421,4 +384,27 @@ class Package {
   final LibraryElement library;
   late final Set<String> widgetNames;
   final Set<ClassElement> classes = {};
+}
+
+extension on Iterable<ParameterElement> {
+  List<ParameterElement> filterDeprecated() {
+    return where((element) => !element.metadata.any((m) {
+          final type = m.computeConstantValue()?.type;
+          return type?.toString().toLowerCase() == "deprecated";
+        })).toList();
+  }
+}
+
+/// Trade-in a super.title for this.title to extract information about the
+/// underlying field
+FieldFormalParameterElement? _fieldFromParameter(ParameterElement p) {
+  if (p is FieldFormalParameterElement) {
+    return p;
+  }
+  if (p case SuperFormalParameterElement p) {
+    if (p.superConstructorParameter != null) {
+      return _fieldFromParameter(p.superConstructorParameter!);
+    }
+  }
+  return null;
 }

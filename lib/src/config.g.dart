@@ -22,16 +22,24 @@ Config _$ConfigFromJson(Map json) => $checkedCreate(
                   const {}),
           outputDir: $checkedConvert(
               'output_dir', (v) => v as String? ?? "lib/src/wrapped"),
+          docs: $checkedConvert('docs', (v) => v as bool? ?? false),
+          importPrefix:
+              $checkedConvert('import_prefix', (v) => v as bool? ?? false),
         );
         return val;
       },
-      fieldKeyMap: const {'outputDir': 'output_dir'},
+      fieldKeyMap: const {
+        'outputDir': 'output_dir',
+        'importPrefix': 'import_prefix'
+      },
     );
 
 Map<String, dynamic> _$ConfigToJson(Config instance) => <String, dynamic>{
       'prefix': instance.prefix,
       'widgets': instance.widgets.map((k, e) => MapEntry(k, e.toList())),
       'output_dir': instance.outputDir,
+      'docs': instance.docs,
+      'import_prefix': instance.importPrefix,
     };
 
 RootConfig _$RootConfigFromJson(Map json) => $checkedCreate(

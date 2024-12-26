@@ -6,55 +6,20 @@ import 'package:test/test.dart';
 import 'package:widget_wrapper/src/command_runner.dart';
 import 'package:widget_wrapper/src/commands/messages.dart';
 import 'package:path/path.dart' as p;
+import 'package:test_descriptor/test_descriptor.dart' as d;
 
 class _MockLogger extends Mock implements Logger {}
 
 class _MockProgress extends Mock implements Progress {}
 
-String _basePubspecContent(bool isMocked) => '''
-name: ${isMocked ? 'test_project_mock_flutter' : 'test_project_flutter'}
-
-environment:
-  sdk: ^3.5.0
-  ${isMocked ? '' : 'flutter: ">=2.0.0"'}
-  
-
-dependencies:
-  flutter:
-    ${isMocked ? 'path: flutter' : 'sdk: flutter'}
-    
-
-dev_dependencies:
-  widget_wrapper:
-    path: ../..
-''';
-
-void main() {
-  final testProjects = [
-    (
-      dir:
-          Directory(p.join(Directory.current.path, 'test_projects', 'flutter')),
-      isMocked: false
-    ),
-    (
-      dir: Directory(
-          p.join(Directory.current.path, 'test_projects', 'mock_flutter')),
-      isMocked: true
-    )
-  ];
-
+void main() async {
   group('test add widget', () {
     late Logger logger;
     late WidgetWrapperCommandRunner commandRunner;
-    File pubspecFile() {
-      return File(p.join(Directory.current.path, 'pubspec.yaml'));
-    }
-
-    setUp(() {
+    setUp(() async {
       logger = _MockLogger();
       commandRunner = WidgetWrapperCommandRunner(logger: logger);
-      Directory.current =
-          Directory.systemTemp.createTempSync('widget_wrapper_test');
+
       when(() => logger.err(any())).thenAnswer((i) {
         print(i.positionalArguments.first);
       });
@@ -67,43 +32,43 @@ void main() {
       when(() => logger.progress(any())).thenAnswer((i) {
         return _MockProgress();
       });
+      when(() => logger.prompt(any())).thenAnswer((i) {
+        return i.positionalArguments.first;
+      });
     });
 
-    test('must find pubspec.yaml', () async {
-      final result = await commandRunner.run(['generate']);
-      expect(result, equals(ExitCode.usage.code));
-      verify(
-        () => logger.err(
-          pubspecMissingError,
-        ),
-      ).called(1);
-    });
+    for (final isMocked in [true, false]) {
+      group("mocked: ${isMocked}", () {
+        test('must find pubspec.yaml', () async {
+          final testProject = await createTestProject(mockDependencies: isMocked);
+          testProject.pubspec.deleteSync();
+          final result = await commandRunner.run(['generate']);
+          expect(result, equals(ExitCode.usage.code));
+          verify(() => logger.err(pubspecMissingError)).called(1);
+        });
 
-    test('must have flutter', () async {
-      pubspecFile().writeAsStringSync('''
+        test('must have flutter', () async {
+          await createTestProject(mockDependencies: isMocked, content: '''
 name: widget_wrapper
 version: 0.0.1
 ''');
-      final result = await commandRunner.run(['generate']);
+          final result = await commandRunner.run(['generate']);
+          expect(result, equals(ExitCode.usage.code));
+          verify(() => logger.err(flutterMissingError)).called(1);
+        });
 
-      expect(result, equals(ExitCode.usage.code));
-      verify(
-        () => logger.err(
-          flutterMissingError,
-        ),
-      ).called(1);
-    });
+        test('bad widget_wrapper config', () async {
+          final testProject = await createTestProject(mockDependencies: isMocked);
 
-    test('bad widget_wrapper config', () async {
-      final badConfigs = [
-        '''
+          final badConfigs = [
+            '''
 name: widget_wrapper
 version: 0.0.1
 dependencies:
   flutter:
     path: flutter
 ''',
-        '''
+            '''
 name: widget_wrapper
 version: 0.0.1
 dependencies:
@@ -111,7 +76,7 @@ dependencies:
     path: flutter
 widget_wrapper:
 ''',
-        '''
+            '''
 name: widget_wrapper
 version: 0.0.1
 dependencies:
@@ -121,7 +86,7 @@ widget_wrapper:
   widgets:
     1: invalid_widget
 ''',
-        '''
+            '''
 name: widget_wrapper
 version: 0.0.1
 dependencies:
@@ -131,115 +96,352 @@ widget_wrapper:
   widgets:
     hllo: invalid_widget
 '''
-      ];
-      for (final config in badConfigs) {
-        pubspecFile().writeAsStringSync(config);
-        final result = await commandRunner.run(['generate']);
-        expect(result, equals(ExitCode.usage.code));
-      }
-      verify(
-        () => logger.err(parsePubspecError),
-      ).called(badConfigs.length);
-    });
-    test('good config', () async {
-      final badConfigs = [
-        '''
+          ];
+          for (final config in badConfigs) {
+            testProject.pubspec.writeAsStringSync(config);
+            final result = await commandRunner.run(['generate']);
+            expect(result, equals(ExitCode.usage.code));
+          }
+          verify(() => logger.err(invalidConfig)).called(badConfigs.length);
+        });
+        test('good config', () async {
+          await createTestProject(mockDependencies: isMocked, content: '''
 name: widget_wrapper
 version: 0.0.1
 dependencies:
   flutter:
     path: flutter
-    
+
 widget_wrapper:
   widgets:
-    hello: 
+    hello:
       - widget
-'''
-      ];
-      for (final config in badConfigs) {
-        pubspecFile().writeAsStringSync(config);
-        final result =
-            await commandRunner.run(['generate', '--validate_config']);
-        expect(result, equals(ExitCode.success.code));
-      }
-    });
+''');
 
-    group("parse widgets and generate", () {
-      for (final (dir: dir, isMocked: isMocked) in testProjects) {
-        group(isMocked ? "mocked flutter" : "real flutter", () {
-          final basePubspec = _basePubspecContent(isMocked);
-
-          setUp(() {
-            Directory.current = dir;
-          });
-          setUpAll(() {
-            Directory.current = dir;
-
-            Process.runSync('dart', ['pub', 'get'], runInShell: true);
-          });
-
-          tearDownAll(() {
-            pubspecFile().writeAsStringSync(basePubspec);
-          });
-
-          test('bad library', () async {
-            pubspecFile().writeAsStringSync(basePubspec +
-                '''
+          final result = await commandRunner.run(['generate', '--validate_config']);
+          expect(result, equals(ExitCode.success.code));
+        });
+        test('bad library', () async {
+          await createTestProject(
+              mockDependencies: isMocked,
+              content: '''
 widget_wrapper:
   widgets:
     flutter:
       - invalid_widget
-''');
-            final result =
-                await commandRunner.run(['generate', "--validate_libraries"]);
-            expect(result, equals(ExitCode.usage.code));
-            verify(
-              () => logger.err(invalidLibraryError("flutter")),
-            ).called(1);
-          });
-          test('good library', () async {
-            pubspecFile().writeAsStringSync(basePubspec +
-                '''
+''',
+              append: true);
+
+          final result = await commandRunner.run(['generate', "--validate_libraries"]);
+          expect(result, equals(ExitCode.usage.code));
+          verify(() => logger.err(invalidLibraryError("flutter"))).called(1);
+        });
+
+        test('good library', () async {
+          await createTestProject(
+              mockDependencies: isMocked,
+              content: '''
 widget_wrapper:
   widgets:
     package:flutter/material.dart:
       - foo
     package:flutter/cupertino.dart:
       - all
-''');
-            final result =
-                await commandRunner.run(['generate', "--validate_libraries"]);
-            expect(result, equals(ExitCode.success.code));
-          });
-          test('bad widget', () async {
-            pubspecFile().writeAsStringSync(basePubspec +
-                '''
-widget_wrapper:
-  widgets:
-    "package:flutter/material.dart":
-      - invalid_widget
-''');
-            final result = await commandRunner.run(['generate']);
-            expect(result, equals(ExitCode.usage.code));
-
-            verify(
-              () => logger.err(widgetNotFound(
-                  "package:flutter/material.dart", "invalid_widget")),
-            ).called(1);
-          });
-          test('good widget', () async {
-            pubspecFile().writeAsStringSync(basePubspec +
-                '''
-widget_wrapper:
-  widgets:
-    "package:flutter/material.dart": 
-      - all
-''');
-            final result = await commandRunner.run(['generate']);
-            expect(result, equals(ExitCode.success.code));
-          });
+''',
+              append: true);
+          final result = await commandRunner.run(['generate', "--validate_libraries"]);
+          expect(result, equals(ExitCode.success.code));
         });
-      }
-    });
+        test('bad widget', () async {
+          await createTestProject(
+              mockDependencies: isMocked,
+              content: '''
+widget_wrapper:
+  widgets:
+    "package:shadcn_ui/shadcn_ui.dart":
+      - invalid_widget
+''',
+              append: true);
+          final result = await commandRunner.run(['generate']);
+          expect(result, equals(ExitCode.usage.code));
+
+          verify(() =>
+                  logger.err(widgetNotFound("package:shadcn_ui/shadcn_ui.dart", "invalid_widget")))
+              .called(1);
+        });
+        test('single widget', () async {
+          final testProject = await createTestProject(mockDependencies: isMocked);
+
+          testProject.pubspec.writeAsStringSync('''
+widget_wrapper:
+  widgets:
+    package:shadcn_ui/shadcn_ui.dart:
+      - ShadButton
+''', mode: FileMode.append);
+          final result = await commandRunner.run(['generate']);
+          expect(result, equals(ExitCode.success.code));
+
+          if (isMocked) {
+            await d.dir("lib", [
+              d.dir("src", [
+                d.dir("wrapped", [
+                  d.dir("shadcn_ui", [
+                    d.file("shadcn_ui.dart", """import 'package:shadcn_ui/shadcn_ui.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
+
+class \$ShadButton extends StatelessWidget {
+  \$ShadButton();
+
+  Widget build(BuildContext context) {
+    return ShadButton();
+  }
+}
+""")
+                  ])
+                ])
+              ])
+            ]).validate(testProject.io.path);
+          }
+        });
+        test('all widget', () async {
+          final testProject = await createTestProject(mockDependencies: isMocked);
+
+          testProject.pubspec.writeAsStringSync('''
+widget_wrapper:
+  widgets:
+    package:flutter/material.dart:
+      - all
+''', mode: FileMode.append);
+          final result = await commandRunner.run(['generate']);
+          expect(result, equals(ExitCode.success.code));
+        });
+        test('multi package', () async {
+          final testProject = await createTestProject(mockDependencies: isMocked);
+
+          testProject.pubspec.writeAsStringSync('''
+widget_wrapper:
+  widgets:
+    package:flutter/material.dart:
+      - all
+    package:shadcn_ui/shadcn_ui.dart:
+      - ShadButton
+''', mode: FileMode.append);
+          final result = await commandRunner.run(['generate']);
+          expect(result, equals(ExitCode.success.code));
+          if (isMocked) {
+            await d.dir("lib", [
+              d.dir("src", [
+                d.dir("wrapped", [
+                  d.dir("shadcn_ui", [
+                    d.file("shadcn_ui.dart", """import 'package:shadcn_ui/shadcn_ui.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
+
+class \$ShadButton extends StatelessWidget {
+  \$ShadButton();
+
+  Widget build(BuildContext context) {
+    return ShadButton();
+  }
+}
+""")
+                  ])
+                ])
+              ])
+            ]).validate(testProject.io.path);
+          }
+        });
+        test('custom file', () async {
+          final testProject = await createTestProject(mockDependencies: isMocked);
+
+          testProject.pubspec.writeAsStringSync('''
+widget_wrapper:
+  output_dir: lib/src/widgets
+  widgets:
+    package:shadcn_ui/shadcn_ui.dart:
+      - ShadButton
+''', mode: FileMode.append);
+          final result = await commandRunner.run(['generate']);
+          expect(result, equals(ExitCode.success.code));
+          if (isMocked) {
+            await d.dir("lib", [
+              d.dir("src", [
+                d.dir("widgets", [
+                  d.dir("shadcn_ui", [
+                    d.file("shadcn_ui.dart", """import 'package:shadcn_ui/shadcn_ui.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
+
+class \$ShadButton extends StatelessWidget {
+  \$ShadButton();
+
+  Widget build(BuildContext context) {
+    return ShadButton();
+  }
+}
+""")
+                  ])
+                ])
+              ])
+            ]).validate(testProject.io.path);
+          }
+        });
+      });
+    }
   });
+}
+
+Future<d.DirectoryDescriptor> createTestProject({
+  required bool mockDependencies,
+  String? content,
+  bool append = false,
+}) async {
+  final d.DirectoryDescriptor testProject;
+  switch (mockDependencies) {
+    case true:
+      testProject = d.dir(
+        'test_project',
+        [
+          d.file('pubspec.yaml', """
+name: test_project
+
+environment:
+  sdk: ^3.5.0
+  
+dependencies:
+  flutter:
+    path: flutter
+  shadcn_ui: 
+    path: shadcn_ui
+
+"""),
+          d.dir("lib", [d.file("main.dart", "")]),
+          d.dir("shadcn_ui", [
+            d.file("pubspec.yaml", """
+name: shadcn_ui
+
+environment:
+  sdk: ^3.5.0
+  
+dependencies:
+  flutter:
+    path: ../flutter
+"""),
+            d.dir("lib", [
+              d.file("shadcn_ui.dart", """
+import 'package:flutter/widgets.dart';
+class ShadButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container();
+  }
+}
+""")
+            ])
+          ]),
+          d.dir("flutter", [
+            d.file("pubspec.yaml", """
+name: flutter
+
+environment:
+  sdk: ^3.5.0
+
+"""),
+            d.dir("lib", [
+              d.file("flutter.dart", """
+export 'cupertino.dart';
+export 'material.dart';
+export 'widgets.dart';
+"""),
+              d.file("cupertino.dart", """
+import 'package:flutter/widgets.dart';
+
+class CupertinoButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container();
+  }
+}
+"""),
+              d.file("material.dart", """
+import 'package:flutter/widgets.dart';
+
+class ElevatedButton extends Widget {
+  ElevatedButton(String text);
+  @override
+  Widget build(BuildContext context) {
+    return Container();
+  }
+}
+"""),
+              d.file("widgets.dart", """
+class BuildContext {}
+
+abstract class Widget {
+  const Widget();
+  Widget build(BuildContext context);
+}
+
+abstract class StatelessWidget extends Widget {
+  const StatelessWidget();
+  Widget build(BuildContext context);
+}
+
+class Shader {}
+
+class Rect {}
+
+class Container extends Widget {
+  Container();
+  @override
+  Widget build(BuildContext context) {
+    return this;
+  }
+}
+""")
+            ])
+          ])
+        ],
+      );
+    case false:
+      testProject = d.dir(
+        'test_project',
+        [
+          d.file('pubspec.yaml', """
+name: test_project
+
+environment:
+  sdk: ^3.5.0
+  flutter: ">=2.0.0"
+  
+dependencies:
+  flutter:
+    sdk: flutter
+  shadcn_ui: 
+    ^0.16.3
+"""),
+          d.dir("lib", [d.file("main.dart", "")])
+        ],
+      );
+  }
+  await testProject.create();
+  final result = Process.runSync(
+    'dart',
+    ['pub', 'get', mockDependencies ? "--offline" : ""],
+    workingDirectory: p.normalize(testProject.io.path),
+  );
+  d.sandbox;
+  final prevCurrentDir = Directory.current;
+  Directory.current = testProject.io.path;
+  addTearDown(() {
+    Directory.current = prevCurrentDir;
+  });
+
+  expect(result.exitCode, equals(0), reason: result.stderr);
+  if (content != null) {
+    testProject.pubspec.writeAsStringSync(content, mode: append ? FileMode.append : FileMode.write);
+  }
+  return testProject;
+}
+
+extension on d.DirectoryDescriptor {
+  File get pubspec => File(p.join(io.path, 'pubspec.yaml'));
 }

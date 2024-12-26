@@ -9,10 +9,15 @@ class Config {
   final Map<String, Set<String>> widgets;
   @JsonKey(name: 'output_dir')
   final String outputDir;
+  final bool docs;
+  @JsonKey(name: 'import_prefix')
+  final bool importPrefix;
   Config({
     this.prefix = "\$",
     this.widgets = const {},
     this.outputDir = "lib/src/wrapped",
+    this.docs = false,
+    this.importPrefix = false,
   });
 
   factory Config.fromJson(Map<dynamic, dynamic> json) => _$ConfigFromJson(json);
@@ -24,7 +29,6 @@ class RootConfig {
   @JsonKey(name: 'widget_wrapper')
   final Config widgetWrapper;
   RootConfig({required this.widgetWrapper});
-  factory RootConfig.fromJson(Map<dynamic, dynamic> json) =>
-      _$RootConfigFromJson(json);
+  factory RootConfig.fromJson(Map<dynamic, dynamic> json) => _$RootConfigFromJson(json);
   Map<String, dynamic> toJson() => _$RootConfigToJson(this);
 }

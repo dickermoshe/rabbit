@@ -3,7 +3,8 @@ import 'package:args/command_runner.dart';
 import 'package:cli_completion/cli_completion.dart';
 import 'package:mason_logger/mason_logger.dart';
 import 'package:pub_updater/pub_updater.dart';
-import 'package:widget_wrapper/src/commands/commands.dart';
+import 'package:widget_wrapper/src/commands/generate_command.dart';
+import 'package:widget_wrapper/src/commands/update_command.dart';
 import 'package:widget_wrapper/src/version.dart';
 
 const executableName = 'widget_wrapper';
