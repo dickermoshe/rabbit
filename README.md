@@ -20,11 +20,21 @@ RedContainer(
 
 Rabbit helps you create these wrapper widgets quickly and consistently, maintaining all the original widget's parameters while allowing you to customize what you need.
 
+## Complaints
+
+ - Ewww, why would you want to do this? 
+ - Why didn't you do it this way? 
+ - Why didn't you use **blank** instead?
+ - Why did you do it that way?
+ - This isnt working, who made this garbage?
+
+You may have a good point, open an [issue](https://github.com/dickermoshe/rabbit/issues) and let me know.
+
 ## Table of Contents
 
 - [Rabbit 🐰](#rabbit-)
+  - [Complaints](#complaints)
   - [Table of Contents](#table-of-contents)
-  - [Requirements](#requirements)
   - [Installation](#installation)
   - [Getting Started](#getting-started)
   - [Configuration Options](#configuration-options)
@@ -45,10 +55,6 @@ Rabbit helps you create these wrapper widgets quickly and consistently, maintain
     - [When Not to Use Wrappers](#when-not-to-use-wrappers)
     - [Naming Conventions](#naming-conventions)
 
-
-## Requirements
-
-- Flutter SDK: >=3.19.0
 
 ## Installation
 

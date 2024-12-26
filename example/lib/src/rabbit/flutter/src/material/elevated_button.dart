@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/src/material/elevated_button.dart';
 
 class $ElevatedButton extends StatelessWidget {
-  $ElevatedButton({
-    this.key,
+  const $ElevatedButton({
+    super.key,
     this.onPressed,
     this.onLongPress,
     this.onHover,
@@ -16,8 +16,6 @@ class $ElevatedButton extends StatelessWidget {
     this.child,
     required this.iconAlignment,
   });
-
-  final Key? key;
 
   final VoidCallback? onPressed;
 
@@ -41,6 +39,7 @@ class $ElevatedButton extends StatelessWidget {
 
   final IconAlignment iconAlignment;
 
+  @override
   Widget build(BuildContext context) {
     return ElevatedButton(
       key: key,
@@ -53,15 +52,15 @@ class $ElevatedButton extends StatelessWidget {
       autofocus: autofocus,
       clipBehavior: clipBehavior,
       statesController: statesController,
-      child: child,
       iconAlignment: iconAlignment,
+      child: child,
     );
   }
 }
 
 class $ElevatedButtonIcon extends StatelessWidget {
-  $ElevatedButtonIcon({
-    this.key,
+  const $ElevatedButtonIcon({
+    super.key,
     this.onPressed,
     this.onLongPress,
     this.onHover,
@@ -75,8 +74,6 @@ class $ElevatedButtonIcon extends StatelessWidget {
     required this.label,
     required this.iconAlignment,
   });
-
-  final Key? key;
 
   final VoidCallback? onPressed;
 
@@ -102,6 +99,7 @@ class $ElevatedButtonIcon extends StatelessWidget {
 
   final IconAlignment iconAlignment;
 
+  @override
   Widget build(BuildContext context) {
     return ElevatedButton.icon(
       key: key,

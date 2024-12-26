@@ -256,9 +256,20 @@ class AddWidgetCommand extends Command<int> {
                 if (conElement.documentationComment != null && config.docs) {
                   cc.docs.add(conElement.documentationComment!);
                 }
+                // Add the Stateless Widget key parameter
+                cc.optionalParameters.add(cb.Parameter((p) {
+                  p.name = 'key';
+                  p.named = true;
+                  p.toSuper = true;
+                }));
 
                 // Add the parameters to the constructor.
                 for (var pElement in parameters) {
+                  // Ignore the child key parameter
+                  if (pElement.name == 'key') {
+                    continue;
+                  }
+
                   /// If the constructor is a redirecting constructor, then we will
                   /// get that parameter for the redirected constructor parameter.
                   /// That paramter will have more accurate information about the field.
@@ -309,6 +320,8 @@ class AddWidgetCommand extends Command<int> {
                   } else {
                     cc.optionalParameters.add(parameter);
                   }
+                  // All stateless widget parameters are final
+                  cc.constant = true;
 
                   c.fields.add(cb.Field((f) {
                     f.name = parameter.name;
@@ -333,6 +346,7 @@ class AddWidgetCommand extends Command<int> {
               c.methods.add(cb.Method((m) {
                 m.name = 'build';
                 m.returns = cb.refer('Widget', 'package:flutter/widgets.dart');
+                m.annotations.add(cb.refer('override'));
                 m.requiredParameters.add(cb.Parameter((p) {
                   p.name = 'context';
                   p.type =

@@ -200,10 +200,14 @@ rabbit:
                           """import 'package:shadcn_ui/shadcn_ui.dart';
 
 class \$ShadButton extends StatelessWidget {
-  \$ShadButton({required this.text});
+  const \$ShadButton({
+    super.key,
+    required this.text,
+  });
 
   final String text;
 
+  @override
   Widget build(BuildContext context) {
     return ShadButton(text: text);
   }
@@ -251,10 +255,14 @@ rabbit:
                           """import 'package:shadcn_ui/shadcn_ui.dart';
 
 class \$ShadButton extends StatelessWidget {
-  \$ShadButton({required this.text});
+  const \$ShadButton({
+    super.key,
+    required this.text,
+  });
 
   final String text;
 
+  @override
   Widget build(BuildContext context) {
     return ShadButton(text: text);
   }
@@ -288,10 +296,14 @@ rabbit:
                           """import 'package:shadcn_ui/shadcn_ui.dart';
 
 class \$ShadButton extends StatelessWidget {
-  \$ShadButton({required this.text});
+  const \$ShadButton({
+    super.key,
+    required this.text,
+  });
 
   final String text;
 
+  @override
   Widget build(BuildContext context) {
     return ShadButton(text: text);
   }
@@ -328,10 +340,14 @@ import 'package:flutter/widgets.dart' as _i1;
 import 'package:shadcn_ui/shadcn_ui.dart' as _i2;
 
 class \$ShadButton extends _i1.StatelessWidget {
-  \$ShadButton({required this.text});
+  const \$ShadButton({
+    super.key,
+    required this.text,
+  });
 
   final String text;
 
+  @override
   _i1.Widget build(_i1.BuildContext context) {
     return _i2.ShadButton(text: text);
   }
@@ -349,6 +365,8 @@ class \$ShadButton extends _i1.StatelessWidget {
               ['analyze', "--fatal-infos"],
               workingDirectory: p.normalize(testProject.io.path),
             );
+            print(analyzeResult.stdout);
+            print(analyzeResult.stderr);
             expect(analyzeResult.exitCode, equals(0),
                 reason: analyzeResult.stderr);
           });
@@ -376,10 +394,14 @@ rabbit:
                           """import 'package:shadcn_ui/shadcn_ui.dart';
 
 class MyShadButton extends StatelessWidget {
-  MyShadButton({required this.text});
+  const MyShadButton({
+    super.key,
+    required this.text,
+  });
 
   final String text;
 
+  @override
   Widget build(BuildContext context) {
     return ShadButton(text: text);
   }
@@ -414,11 +436,15 @@ rabbit:
 /// Class Docs
 class \$ShadButton extends StatelessWidget {
   /// Constructor Docs
-  \$ShadButton({required this.text});
+  const \$ShadButton({
+    super.key,
+    required this.text,
+  });
 
   /// Field Docs
   final String text;
 
+  @override
   Widget build(BuildContext context) {
     return ShadButton(text: text);
   }
@@ -529,14 +555,15 @@ class ElevatedButton extends Widget {
 """),
               d.file("widgets.dart", """
 class BuildContext {}
-
+class Key {}
 abstract class Widget {
-  const Widget();
+  const Widget({ this.key });
+  final Key? key;
   Widget build(BuildContext context);
 }
 
 abstract class StatelessWidget extends Widget {
-  const StatelessWidget();
+  const StatelessWidget({ super.key });
   Widget build(BuildContext context);
 }
 
