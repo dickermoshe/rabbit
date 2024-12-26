@@ -35,6 +35,7 @@ You may have a good point, open an [issue](https://github.com/dickermoshe/rabbit
 - [Rabbit 🐰](#rabbit-)
   - [Complaints](#complaints)
   - [Table of Contents](#table-of-contents)
+  - [Requirements](#requirements)
   - [Installation](#installation)
   - [Getting Started](#getting-started)
   - [Configuration Options](#configuration-options)
@@ -55,6 +56,9 @@ You may have a good point, open an [issue](https://github.com/dickermoshe/rabbit
     - [When Not to Use Wrappers](#when-not-to-use-wrappers)
     - [Naming Conventions](#naming-conventions)
 
+## Requirements
+
+- Flutter 3.22.0 or later
 
 ## Installation
 
