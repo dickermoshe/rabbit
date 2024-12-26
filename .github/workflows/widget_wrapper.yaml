@@ -22,13 +22,32 @@ on:
 
 jobs:
   build:
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         version: [3.19, 3.24, 3.27, 3.22]
-    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/flutter_package.yml@v1
-    with:
-      flutter_version: ${{ matrix.version }}
-      test_optimization: false
+    steps:
+      - name: 📚 Git Checkout
+        uses: actions/checkout@v4
+
+      - name: 🐦 Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ matrix.version }}
+          cache: true
+          cache-key: flutter-:os:-:channel:-:version:-:arch:-:hash:-${{ hashFiles('**/pubspec.lock') }}
+
+      - name: 📦 Install Dependencies
+        run: dart pub get
+
+      - name: ✨ Check Formatting
+        run: dart format --set-exit-if-changed .
+
+      - name: 🕵️ Analyze
+        run: dart analyze --fatal-infos --fatal-warnings .
+
+      - name: 🧪 Test
+        run: dart test
 
   spell-check:
     uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/spell_check.yml@v1
