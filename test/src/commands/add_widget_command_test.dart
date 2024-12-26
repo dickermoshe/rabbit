@@ -449,7 +449,7 @@ Future<d.DirectoryDescriptor> createTestProject({
 name: test_project
 
 environment:
-  sdk: ^3.5.0
+  sdk: ^3.3.0
   
 dependencies:
   flutter:
@@ -464,7 +464,7 @@ dependencies:
 name: shadcn_ui
 
 environment:
-  sdk: ^3.5.0
+  sdk: ^3.3.0
   
 dependencies:
   flutter:
@@ -495,7 +495,7 @@ class ShadButton extends StatelessWidget {
 name: flutter
 
 environment:
-  sdk: ^3.5.0
+  sdk: ^3.3.0
 
 """),
             d.dir("lib", [
@@ -562,7 +562,7 @@ class Container extends Widget {
 name: test_project
 
 environment:
-  sdk: ^3.5.0
+  sdk: ^3.3.0
   flutter: ">=2.0.0"
   
 dependencies:
