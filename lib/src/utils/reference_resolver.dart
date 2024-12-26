@@ -82,7 +82,8 @@ cb.Reference typeReference(DartType type, TypeSystem typeSystem,
       })
       ..isNullable = forceNullable || typeSystem.isNullable(type));
   } else {
-    return cb.refer(type.getDisplayString(), _typeImport(type.element));
+    return cb.refer(type.getDisplayString(withNullability: true),
+        _typeImport(type.element));
   }
 }
 

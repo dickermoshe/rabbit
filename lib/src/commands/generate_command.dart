@@ -389,9 +389,7 @@ class AddWidgetCommand extends Command<int> {
       }
 
       final rawCode = e.value.accept(emitter).toString();
-      final formattedCode =
-          DartFormatter(languageVersion: DartFormatter.latestLanguageVersion)
-              .format(rawCode);
+      final formattedCode = DartFormatter().format(rawCode);
       file.writeAsStringSync(formattedCode);
     }
     writeCodeStopper.stop();

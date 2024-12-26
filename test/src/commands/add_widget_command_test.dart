@@ -568,8 +568,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  shadcn_ui: 
-    ^0.16.3
+  shadcn_ui: ^0.12.0
 """),
           d.dir("lib", [d.file("main.dart", "")])
         ],
