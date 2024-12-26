@@ -33,4 +33,7 @@ build/
 # FVM Version Cache
 .fvm/
 test_projects/*/lib/**
+test_projects/pubspec.lock
+
 .vscode/
+.fvmrc

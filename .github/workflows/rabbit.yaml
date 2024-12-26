@@ -50,6 +50,10 @@ jobs:
       - name: 🧪 Test
         run: dart test
 
+      - name: 📚 Test Example
+        working-directory: example
+        run: flutter test
+
   spell-check:
     uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/spell_check.yml@v1
     with:
