@@ -1,3 +1,5 @@
+@Timeout(Duration(minutes: 2))
+
 import 'dart:io';
 
 import 'package:mason_logger/mason_logger.dart';
