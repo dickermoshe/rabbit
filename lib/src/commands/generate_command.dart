@@ -126,7 +126,7 @@ class AddWidgetCommand extends Command<int> {
     }
 
     /// Create the analysis context and locate the libraries for the widgets.
-    final context = await createContext(p.normalize(currentDir.path));
+    final context = createContext(p.normalize(currentDir.path));
     final packages = <Package>[];
     _logger.info('Parsing packages:');
     for (final MapEntry(key: package, value: widgetNames)

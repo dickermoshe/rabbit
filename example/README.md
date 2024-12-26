@@ -1,0 +1,1 @@
+An example project for the `rabbit` project

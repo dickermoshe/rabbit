@@ -1,8 +1,29 @@
 
+
+
+
+# Rabbit 🐰
+
+Instead of writing:
+```dart
+Container(
+  color: Colors.red,
+  child: child,
+)
+```
+Generate a `RedContainer` widget that encapsulates this styling:
+```dart
+RedContainer(
+  child: child,
+)
+```
+
+Rabbit helps you create these wrapper widgets quickly and consistently, maintaining all the original widget's parameters while allowing you to customize what you need.
+
 ## Table of Contents
 
 - [Rabbit 🐰](#rabbit-)
-  - [Features](#features)
+  - [Table of Contents](#table-of-contents)
   - [Requirements](#requirements)
   - [Installation](#installation)
   - [Getting Started](#getting-started)
@@ -14,6 +35,7 @@
     - [`prefix`](#prefix)
     - [`docs`](#docs)
   - [Multiple Constructors](#multiple-constructors)
+  - [Known Limitations](#known-limitations)
   - [Maintaining Generated Code](#maintaining-generated-code)
   - [Common Use Cases](#common-use-cases)
     - [Theming Widgets](#theming-widgets)
@@ -24,50 +46,16 @@
     - [Naming Conventions](#naming-conventions)
 
 
-# Rabbit 🐰
-
-A Dart CLI tool that generates wrapper widgets to help reduce boilerplate code and create reusable widget variations. Instead of manually writing wrapper widgets for customized versions of existing widgets, Rabbit generates the boilerplate code for you, allowing you to focus on the customization.
-
-For example, if you need a red container in multiple places in your app, instead of writing:
-```dart
-Container(
-  color: Colors.red,
-  child: child,
-)
-```
-You can generate a `RedContainer` widget that encapsulates this styling:
-```dart
-RedContainer(
-  child: child,
-)
-```
-
-Rabbit helps you create these wrapper widgets quickly and consistently, maintaining all the original widget's parameters while allowing you to customize what you need.
-
-## Features
-
-- **Easy Widget Wrapping**: Generate wrapper widgets from any existing widget with a single command
-- **Type Safety**: Preserves generic types and constructor parameters from the original widget
-- **Customizable Output**: 
-  - Choose your output directory
-  - Customize widget name prefixes
-  - Control import statement generation
-- **Documentation Support**: Option to include original widget's documentation comments
-- **Bulk Generation**: Generate multiple wrappers at once, even for entire packages
-- **Non-Destructive**: Never overwrites existing files, allowing safe regeneration
-- **Flutter Compatible**: Works with any Flutter widget, including third-party packages
-
 ## Requirements
 
 - Flutter SDK: >=3.19.0
-- Dart SDK: >=3.19.0
 
 ## Installation
 
 Add Rabbit to your project's dev dependencies:
 
 ```sh
-flutter pub add dev:rabbit
+dart pub add dev:rabbit
 ```
 
 Or manually add it to your `pubspec.yaml`:
@@ -79,7 +67,7 @@ dev_dependencies:
 
 Then run:
 ```sh
-flutter pub get
+dart pub get
 ```
 
 ## Getting Started
@@ -245,6 +233,13 @@ class $ListViewCustom extends StatelessWidget { ... }
 ```
 
 Each generated wrapper maintains the exact signature and functionality of its corresponding constructor.
+
+## Known Limitations
+
+- Does not support generating wrappers for widgets with private constructors
+- Widgets with default values for parameters have those parameters as required in the generated code
+- Does not generate imports for types without a prefix
+
 
 ## Maintaining Generated Code
 
