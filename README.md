@@ -22,11 +22,11 @@ Rabbit helps you create these wrapper widgets quickly and consistently, maintain
 
 ## Complaints
 
- - Ewww, why would you want to do this? 
+ - Eww, why would you want to do this? 
  - Why didn't you do it this way? 
  - Why didn't you use **blank** instead?
  - Why did you do it that way?
- - This isnt working, who made this garbage?
+ - This isn't working, who made this garbage?
 
 You may have a good point, open an [issue](https://github.com/dickermoshe/rabbit/issues) and let me know.
 
