@@ -200,10 +200,17 @@ class AddWidgetCommand extends Command<int> {
             p.normalize(p.joinAll([outputDir.path, ...wElement.library.source.uri.pathSegments]));
         final library = (results[path] ?? cb.Library()).toBuilder();
         for (final conElement in wElement.constructors) {
-          // Only add the imports once
-          if (library.body.isEmpty) {
-            library.body.add(cb.Directive.import(package.library.source.uri.toString()));
-            library.body.add(cb.Directive.import(wElement.library.source.uri.toString()));
+          // The body will be empty if this is the first time we are adding to the library.
+          // This ensures that the import directive is added to the top of the file.
+          // Alos, only add import if we arent using code_builders import prefixes
+          if (library.body.isEmpty && !config.importPrefix) {
+            final libraryUris = {
+              package.library.source.uri.toString(),
+              wElement.library.source.uri.toString()
+            };
+            for (var uri in libraryUris) {
+              library.body.add(cb.Directive.import(uri));
+            }
           }
 
           library.body.add(cb.Class(
@@ -215,7 +222,7 @@ class AddWidgetCommand extends Command<int> {
               c.extend = cb.refer('StatelessWidget', 'package:flutter/widgets.dart');
 
               // Copy the documentation from the widget to the class
-              if (wElement.documentationComment != null) {
+              if (wElement.documentationComment != null && config.docs) {
                 c.docs.add(wElement.documentationComment!);
               }
 
@@ -235,7 +242,7 @@ class AddWidgetCommand extends Command<int> {
               // Create the constructor for the widget.
               c.constructors.add(cb.Constructor((cc) {
                 // Copy the documentation from the constructor to the class
-                if (conElement.documentationComment != null) {
+                if (conElement.documentationComment != null && config.docs) {
                   cc.docs.add(conElement.documentationComment!);
                 }
 
@@ -273,7 +280,8 @@ class AddWidgetCommand extends Command<int> {
                     p.toThis = true;
                     // Copy the documentation from the parameter to the class
                     // The redirected parameter has more accurate information
-                    if ((redirectedParameter ?? pElement).documentationComment != null) {
+                    if ((redirectedParameter ?? pElement).documentationComment != null &&
+                        config.docs) {
                       p.docs.add(pElement.documentationComment!);
                     }
                   });
@@ -297,7 +305,7 @@ class AddWidgetCommand extends Command<int> {
                         ?.field
                         ?.documentationComment;
 
-                    if (docs != null) {
+                    if (docs != null && config.docs) {
                       f.docs.add(docs);
                     }
                   }));

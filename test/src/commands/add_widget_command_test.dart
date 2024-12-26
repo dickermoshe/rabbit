@@ -152,73 +152,75 @@ widget_wrapper:
           final result = await commandRunner.run(['generate', "--validate_libraries"]);
           expect(result, equals(ExitCode.success.code));
         });
-        test('bad widget', () async {
-          await createTestProject(
-              mockDependencies: isMocked,
-              content: '''
+
+        group("validate wrapper", () {
+          test('bad widget', () async {
+            await createTestProject(
+                mockDependencies: isMocked,
+                content: '''
 widget_wrapper:
   widgets:
     "package:shadcn_ui/shadcn_ui.dart":
       - invalid_widget
 ''',
-              append: true);
-          final result = await commandRunner.run(['generate']);
-          expect(result, equals(ExitCode.usage.code));
+                append: true);
+            final result = await commandRunner.run(['generate']);
+            expect(result, equals(ExitCode.usage.code));
 
-          verify(() =>
-                  logger.err(widgetNotFound("package:shadcn_ui/shadcn_ui.dart", "invalid_widget")))
-              .called(1);
-        });
-        test('single widget', () async {
-          final testProject = await createTestProject(mockDependencies: isMocked);
+            verify(() => logger.err(
+                widgetNotFound("package:shadcn_ui/shadcn_ui.dart", "invalid_widget"))).called(1);
+          });
+          test('single widget', () async {
+            final testProject = await createTestProject(mockDependencies: isMocked);
 
-          testProject.pubspec.writeAsStringSync('''
+            testProject.pubspec.writeAsStringSync('''
 widget_wrapper:
   widgets:
     package:shadcn_ui/shadcn_ui.dart:
       - ShadButton
 ''', mode: FileMode.append);
-          final result = await commandRunner.run(['generate']);
-          expect(result, equals(ExitCode.success.code));
+            final result = await commandRunner.run(['generate']);
+            expect(result, equals(ExitCode.success.code));
 
-          if (isMocked) {
-            await d.dir("lib", [
-              d.dir("src", [
-                d.dir("wrapped", [
-                  d.dir("shadcn_ui", [
-                    d.file("shadcn_ui.dart", """import 'package:shadcn_ui/shadcn_ui.dart';
-import 'package:shadcn_ui/shadcn_ui.dart';
+            if (isMocked) {
+              await d.dir("lib", [
+                d.dir("src", [
+                  d.dir("wrapped", [
+                    d.dir("shadcn_ui", [
+                      d.file("shadcn_ui.dart", """import 'package:shadcn_ui/shadcn_ui.dart';
 
 class \$ShadButton extends StatelessWidget {
-  \$ShadButton();
+  \$ShadButton({required this.text});
+
+  final String text;
 
   Widget build(BuildContext context) {
-    return ShadButton();
+    return ShadButton(text: text);
   }
 }
 """)
+                    ])
                   ])
                 ])
-              ])
-            ]).validate(testProject.io.path);
-          }
-        });
-        test('all widget', () async {
-          final testProject = await createTestProject(mockDependencies: isMocked);
+              ]).validate(testProject.io.path);
+            }
+          });
+          test('all widget', () async {
+            final testProject = await createTestProject(mockDependencies: isMocked);
 
-          testProject.pubspec.writeAsStringSync('''
+            testProject.pubspec.writeAsStringSync('''
 widget_wrapper:
   widgets:
     package:flutter/material.dart:
       - all
 ''', mode: FileMode.append);
-          final result = await commandRunner.run(['generate']);
-          expect(result, equals(ExitCode.success.code));
-        });
-        test('multi package', () async {
-          final testProject = await createTestProject(mockDependencies: isMocked);
+            final result = await commandRunner.run(['generate']);
+            expect(result, equals(ExitCode.success.code));
+          });
+          test('multi package', () async {
+            final testProject = await createTestProject(mockDependencies: isMocked);
 
-          testProject.pubspec.writeAsStringSync('''
+            testProject.pubspec.writeAsStringSync('''
 widget_wrapper:
   widgets:
     package:flutter/material.dart:
@@ -226,62 +228,186 @@ widget_wrapper:
     package:shadcn_ui/shadcn_ui.dart:
       - ShadButton
 ''', mode: FileMode.append);
-          final result = await commandRunner.run(['generate']);
-          expect(result, equals(ExitCode.success.code));
-          if (isMocked) {
-            await d.dir("lib", [
-              d.dir("src", [
-                d.dir("wrapped", [
-                  d.dir("shadcn_ui", [
-                    d.file("shadcn_ui.dart", """import 'package:shadcn_ui/shadcn_ui.dart';
-import 'package:shadcn_ui/shadcn_ui.dart';
+            final result = await commandRunner.run(['generate']);
+            expect(result, equals(ExitCode.success.code));
+            if (isMocked) {
+              await d.dir("lib", [
+                d.dir("src", [
+                  d.dir("wrapped", [
+                    d.dir("shadcn_ui", [
+                      d.file("shadcn_ui.dart", """import 'package:shadcn_ui/shadcn_ui.dart';
 
 class \$ShadButton extends StatelessWidget {
-  \$ShadButton();
+  \$ShadButton({required this.text});
+
+  final String text;
 
   Widget build(BuildContext context) {
-    return ShadButton();
+    return ShadButton(text: text);
   }
 }
 """)
+                    ])
                   ])
                 ])
-              ])
-            ]).validate(testProject.io.path);
-          }
-        });
-        test('custom file', () async {
-          final testProject = await createTestProject(mockDependencies: isMocked);
+              ]).validate(testProject.io.path);
+            }
+          });
+          test('custom file', () async {
+            final testProject = await createTestProject(mockDependencies: isMocked);
 
-          testProject.pubspec.writeAsStringSync('''
+            testProject.pubspec.writeAsStringSync('''
 widget_wrapper:
   output_dir: lib/src/widgets
   widgets:
     package:shadcn_ui/shadcn_ui.dart:
       - ShadButton
 ''', mode: FileMode.append);
-          final result = await commandRunner.run(['generate']);
-          expect(result, equals(ExitCode.success.code));
-          if (isMocked) {
-            await d.dir("lib", [
-              d.dir("src", [
-                d.dir("widgets", [
-                  d.dir("shadcn_ui", [
-                    d.file("shadcn_ui.dart", """import 'package:shadcn_ui/shadcn_ui.dart';
-import 'package:shadcn_ui/shadcn_ui.dart';
+            final result = await commandRunner.run(['generate']);
+            expect(result, equals(ExitCode.success.code));
+            if (isMocked) {
+              await d.dir("lib", [
+                d.dir("src", [
+                  d.dir("widgets", [
+                    d.dir("shadcn_ui", [
+                      d.file("shadcn_ui.dart", """import 'package:shadcn_ui/shadcn_ui.dart';
 
 class \$ShadButton extends StatelessWidget {
-  \$ShadButton();
+  \$ShadButton({required this.text});
+
+  final String text;
 
   Widget build(BuildContext context) {
-    return ShadButton();
+    return ShadButton(text: text);
   }
 }
 """)
+                    ])
                   ])
                 ])
-              ])
-            ]).validate(testProject.io.path);
+              ]).validate(testProject.io.path);
+            }
+          });
+          test('with prefix', timeout: Timeout(Duration(minutes: 5)), () async {
+            final testProject = await createTestProject(mockDependencies: isMocked);
+
+            testProject.pubspec.writeAsStringSync('''
+widget_wrapper:
+  import_prefix: true
+  widgets:
+    package:shadcn_ui/shadcn_ui.dart:
+      - ShadButton
+''', mode: FileMode.append);
+            final result = await commandRunner.run(['generate']);
+            expect(result, equals(ExitCode.success.code));
+
+            if (isMocked) {
+              await d.dir("lib", [
+                d.dir("src", [
+                  d.dir("wrapped", [
+                    d.dir("shadcn_ui", [
+                      d.file("shadcn_ui.dart",
+                          """// ignore_for_file: no_leading_underscores_for_library_prefixes
+import 'package:flutter/widgets.dart' as _i1;
+import 'package:shadcn_ui/shadcn_ui.dart' as _i2;
+
+class \$ShadButton extends _i1.StatelessWidget {
+  \$ShadButton({required this.text});
+
+  final String text;
+
+  _i1.Widget build(_i1.BuildContext context) {
+    return _i2.ShadButton(text: text);
+  }
+}
+""")
+                    ])
+                  ])
+                ])
+              ]).validate(testProject.io.path);
+            }
+
+            // Generations with prefix should be able to pass the dart analyzer
+            final analyzeResult = Process.runSync(
+              'dart',
+              ['analyze', "--fatal-infos"],
+              workingDirectory: p.normalize(testProject.io.path),
+            );
+            expect(analyzeResult.exitCode, equals(0), reason: analyzeResult.stderr);
+          });
+
+          if (isMocked) {
+            test('custom prefix', () async {
+              final testProject = await createTestProject(mockDependencies: isMocked);
+
+              testProject.pubspec.writeAsStringSync('''
+widget_wrapper:
+  prefix: My
+  widgets:
+    package:shadcn_ui/shadcn_ui.dart:
+      - ShadButton
+''', mode: FileMode.append);
+              final result = await commandRunner.run(['generate']);
+              expect(result, equals(ExitCode.success.code));
+
+              await d.dir("lib", [
+                d.dir("src", [
+                  d.dir("wrapped", [
+                    d.dir("shadcn_ui", [
+                      d.file("shadcn_ui.dart", """import 'package:shadcn_ui/shadcn_ui.dart';
+
+class MyShadButton extends StatelessWidget {
+  MyShadButton({required this.text});
+
+  final String text;
+
+  Widget build(BuildContext context) {
+    return ShadButton(text: text);
+  }
+}
+""")
+                    ])
+                  ])
+                ])
+              ]).validate(testProject.io.path);
+            });
+            test('with docs', () async {
+              final testProject = await createTestProject(mockDependencies: isMocked);
+
+              testProject.pubspec.writeAsStringSync('''
+widget_wrapper:
+  docs: true
+  widgets:
+    package:shadcn_ui/shadcn_ui.dart:
+      - ShadButton
+''', mode: FileMode.append);
+              final result = await commandRunner.run(['generate']);
+              expect(result, equals(ExitCode.success.code));
+
+              await d.dir("lib", [
+                d.dir("src", [
+                  d.dir("wrapped", [
+                    d.dir("shadcn_ui", [
+                      d.file("shadcn_ui.dart", """import 'package:shadcn_ui/shadcn_ui.dart';
+
+/// Class Docs
+class \$ShadButton extends StatelessWidget {
+  /// Constructor Docs
+  \$ShadButton({required this.text});
+
+  /// Field Docs
+  final String text;
+
+  Widget build(BuildContext context) {
+    return ShadButton(text: text);
+  }
+}
+""")
+                    ])
+                  ])
+                ])
+              ]).validate(testProject.io.path);
+            });
           }
         });
       });
@@ -328,7 +454,15 @@ dependencies:
             d.dir("lib", [
               d.file("shadcn_ui.dart", """
 import 'package:flutter/widgets.dart';
+/// Class Docs
 class ShadButton extends StatelessWidget {
+
+  /// Field Docs
+  final String text;
+
+  /// Constructor Docs
+  ShadButton({required this.text});
+
   @override
   Widget build(BuildContext context) {
     return Container();
