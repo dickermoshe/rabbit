@@ -52,8 +52,8 @@ class $ElevatedButton extends StatelessWidget {
       autofocus: autofocus,
       clipBehavior: clipBehavior,
       statesController: statesController,
-      iconAlignment: iconAlignment,
       child: child,
+      iconAlignment: iconAlignment,
     );
   }
 }
