@@ -39,16 +39,16 @@ jobs:
           cache-key: flutter-:os:-:channel:-:version:-:arch:-:hash:-${{ hashFiles('**/pubspec.lock') }}
 
       - name: 📦 Install Dependencies
-        run: dart pub get
+        run: flutter pub get
 
       - name: ✨ Check Formatting
-        run: dart format --set-exit-if-changed .
+        run: flutter format --set-exit-if-changed .
 
       - name: 🕵️ Analyze
-        run: dart analyze --fatal-infos --fatal-warnings .
+        run: flutter analyze --fatal-infos --fatal-warnings .
 
       - name: 🧪 Test
-        run: dart test
+        run: flutter test
 
       - name: 📚 Test Example
         working-directory: example
@@ -76,7 +76,7 @@ jobs:
 
       - name: 📦 Install Dependencies
         run: |
-          dart pub get
+          flutter pub get
 
       - name: 🔎 Verify version
-        run: dart run test --run-skipped -t version-verify
+        run: flutter pub run test --run-skipped -t version-verify
