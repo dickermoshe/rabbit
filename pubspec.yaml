@@ -18,7 +18,7 @@ dependencies:
   custom_lint_builder: ^0.6.4
   dart_style: ^2.3.6
   json_annotation: ^4.9.0
-  mason_logger: ^0.2.16
+  mason_logger: ">=0.2.16 <0.4.0"
   path: ^1.9.0
   pub_updater: ^0.4.0
   pubspec_parse: ^1.4.0
