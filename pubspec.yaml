@@ -15,7 +15,7 @@ dependencies:
   cli_util: ^0.4.1
   code_builder: ^4.10.0
   collection: ^1.18.0
-  custom_lint_builder: ^0.6.4
+  custom_lint_builder: ">=0.6.4 <0.8.0"
   dart_style: ^2.3.6
   json_annotation: ^4.9.0
   mason_logger: ^0.2.16
