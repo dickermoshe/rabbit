@@ -3,6 +3,8 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/visitor.dart';
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+final widgetChecker = TypeChecker.fromName('Widget', packageName: 'flutter');
+
 /// A class which will find all the widgets in a package.
 class WidgetVisitor extends RecursiveElementVisitor {
   /// The root library that the visitor started from.
@@ -17,14 +19,13 @@ class WidgetVisitor extends RecursiveElementVisitor {
   final Set<ClassElement> seenWidgets = <ClassElement>{};
 
   /// This will check if the element is a widget.
-  final _widgetChecker = TypeChecker.fromName('Widget', packageName: 'flutter');
 
   /// The libraries that have been visited. This is to prevent visiting the same library multiple times.
   final visitedLibraries = <LibraryElement>{};
 
   @override
   dynamic visitClassElement(ClassElement element) {
-    final isWidget = _widgetChecker.isAssignableFrom(element);
+    final isWidget = widgetChecker.isAssignableFrom(element);
     if (isWidget &&
         element.isPublic &&
         !element.isAbstract &&

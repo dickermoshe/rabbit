@@ -17,7 +17,7 @@ import 'package:rabbit/src/config.dart';
 import 'package:rabbit/src/utils/progress_isolate.dart';
 import 'package:path/path.dart' as p;
 import 'package:rabbit/src/utils/reference_resolver.dart';
-import 'package:rabbit/src/utils/widet_visitor.dart';
+import 'package:rabbit/src/utils/widget_visitor.dart';
 import 'package:collection/collection.dart';
 
 import 'package:recase/recase.dart';
@@ -213,10 +213,14 @@ class AddWidgetCommand extends Command<int> {
           if (library.body.isEmpty && !config.addImports) {
             final libraryUris = {
               package.library.source.uri.toString(),
-              wElement.library.source.uri.toString()
+              wElement.library.source.uri.toString(),
             };
             for (var uri in libraryUris) {
               library.body.add(cb.Directive.import(uri));
+            }
+            if (config.pipeable) {
+              library.body
+                  .add(cb.Directive.import('package:rabbit/pipeable.dart'));
             }
           }
 
@@ -228,8 +232,41 @@ class AddWidgetCommand extends Command<int> {
               c.name = config.prefix +
                   wElement.name.pascalCase +
                   conElement.name.pascalCase;
-              c.extend =
-                  cb.refer('StatelessWidget', 'package:flutter/widgets.dart');
+
+              /// Get the paramenter which is the child parameter, but only if
+              /// we will be setting up pipable widgets.
+              /// We will extend the class with the PipeableWidget class
+              /// if we have such a parameter.
+              final ParameterElement? pipedParameter;
+              if (!config.pipeable) {
+                pipedParameter = null;
+              } else {
+                pipedParameter =
+                    conElement.parameters.firstWhereOrNull(isPipeable);
+              }
+
+              /// Add an // ignore immutable to the constructor if we are setting up pipeable widgets.
+              if (pipedParameter != null) {
+                c.docs.add("\n// ignore: must_be_immutable");
+              }
+
+              if (pipedParameter != null) {
+                /// Get a TypeReference of the PipeableWidget
+                /// so we can add a type argument to it.
+                final pipeableReference =
+                    cb.refer('PipeableWidget', 'package:rabbit/pipeable.dart');
+                final pipeableTypeReference =
+                    (pipeableReference.type as cb.TypeReference).toBuilder();
+
+                // Add the parameter type (Widget|Widget?) to the type argument.
+                pipeableTypeReference.types.add(typeReference(
+                    pipedParameter.type, package.library.typeSystem));
+
+                c.extend = pipeableTypeReference.build();
+              } else {
+                c.extend =
+                    cb.refer('StatelessWidget', 'package:flutter/widgets.dart');
+              }
 
               // Copy the documentation from the widget to the class
               if (wElement.documentationComment != null && config.docs) {
@@ -270,6 +307,36 @@ class AddWidgetCommand extends Command<int> {
                     continue;
                   }
 
+                  /// The child parameter is a special case. If we are setting up
+                  /// pipeable widgets, then we will add the child parameter to the
+                  /// super constructor.
+                  if (pipedParameter == pElement) {
+                    cc.optionalParameters.add(cb.Parameter((p) {
+                      p.name = 'child';
+                      p.named = true;
+                      p.toSuper = true;
+
+                      if (!isNullableParameter(pipedParameter!)) {
+                        /// We will annotate with parameters that are required or piped
+                        /// with @RequiredOrPiped(), this will allow use to check if the
+                        /// child parameter is required or piped with a linter
+                        p.annotations.add(cb
+                            .refer('RequiredOrPiped',
+                                'package:rabbit/pipeable.dart')
+                            .newInstance([]));
+
+                        /// If the wrapped widget MUST have a child, then we will
+                        /// add a default value to the child parameter.
+                        p.defaultTo = cb
+                            .refer('TemporaryWidget',
+                                'package:rabbit/pipeable.dart')
+                            .constInstance([],
+                                {'name': cb.literalString(wElement.name)}).code;
+                      }
+                    }));
+                    continue;
+                  }
+
                   /// If the constructor is a redirecting constructor, then we will
                   /// get that parameter for the redirected constructor parameter.
                   /// That paramter will have more accurate information about the field.
@@ -278,8 +345,7 @@ class AddWidgetCommand extends Command<int> {
                     final redirectedParameters =
                         conElement.redirectedConstructor!.parameters;
                     redirectedParameter = redirectedParameters.firstWhereOrNull(
-                      (element) => element.name == pElement.name,
-                    );
+                        (element) => element.name == pElement.name);
                   } else {
                     redirectedParameter = null;
                   }
@@ -321,7 +387,8 @@ class AddWidgetCommand extends Command<int> {
                     cc.optionalParameters.add(parameter);
                   }
                   // All stateless widget parameters are final
-                  cc.constant = true;
+                  // unless they are pipeable
+                  cc.constant = pipedParameter == null;
 
                   c.fields.add(cb.Field((f) {
                     f.name = parameter.name;
@@ -447,4 +514,15 @@ FieldFormalParameterElement? _fieldFromParameter(ParameterElement p) {
     }
   }
   return null;
+}
+
+bool isPipeable(ParameterElement p) {
+  return p.name == 'child' &&
+      p.isNamed &&
+      ["Widget", "Widget?"]
+          .contains(p.type.getDisplayString(withNullability: true));
+}
+
+bool isNullableParameter(ParameterElement p) {
+  return p.type.getDisplayString(withNullability: true).endsWith("?");
 }

@@ -25,6 +25,7 @@ Config _$ConfigFromJson(Map json) => $checkedCreate(
           docs: $checkedConvert('docs', (v) => v as bool? ?? false),
           addImports:
               $checkedConvert('add_imports', (v) => v as bool? ?? false),
+          pipeable: $checkedConvert('pipeable', (v) => v as bool? ?? false),
         );
         return val;
       },
@@ -40,6 +41,7 @@ Map<String, dynamic> _$ConfigToJson(Config instance) => <String, dynamic>{
       'output_dir': instance.outputDir,
       'docs': instance.docs,
       'add_imports': instance.addImports,
+      'pipeable': instance.pipeable,
     };
 
 RootConfig _$RootConfigFromJson(Map json) => $checkedCreate(

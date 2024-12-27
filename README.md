@@ -48,16 +48,16 @@ RedContainer(
 
 ## Installation
 
-Add Rabbit to your project's dev dependencies:
+Add Rabbit to your project's dependencies:
 
 ```sh
-dart pub add dev:rabbit
+dart pub add rabbit
 ```
 
 Or manually add it to your `pubspec.yaml`:
 
 ```yaml
-dev_dependencies:
+dependencies:
   rabbit: ^latest_version
 ```
 

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/src/material/elevated_button.dart';
+import 'package:rabbit/pipeable.dart';
 
-class $ElevatedButton extends StatelessWidget {
-  const $ElevatedButton({
+// ignore: must_be_immutable
+class $ElevatedButton extends PipeableWidget<Widget?> {
+  $ElevatedButton({
     super.key,
     this.onPressed,
     this.onLongPress,
@@ -13,7 +15,7 @@ class $ElevatedButton extends StatelessWidget {
     required this.autofocus,
     this.clipBehavior,
     this.statesController,
-    this.child,
+    super.child,
     required this.iconAlignment,
   });
 
@@ -34,8 +36,6 @@ class $ElevatedButton extends StatelessWidget {
   final Clip? clipBehavior;
 
   final WidgetStatesController? statesController;
-
-  final Widget? child;
 
   final IconAlignment iconAlignment;
 

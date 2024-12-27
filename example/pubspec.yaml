@@ -11,18 +11,22 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.6
+  rabbit:
+    path: ../
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
-  rabbit:
-    path: ../
 
 flutter:
   uses-material-design: true
 
 rabbit:
+  pipeable: true
   widgets:
     package:flutter/material.dart:
       - ElevatedButton
+      - Directionality
+      - Container
+      - Column
