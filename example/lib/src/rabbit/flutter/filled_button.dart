@@ -1,52 +1,52 @@
 import 'package:rabbit/pipeable.dart';
 import 'package:flutter/material.dart';
 
-/// A Material Design "elevated button".
+/// A Material Design filled button.
 ///
-/// Use elevated buttons to add dimension to otherwise mostly flat
-/// layouts, e.g. in long busy lists of content, or in wide
-/// spaces. Avoid using elevated buttons on already-elevated content
-/// such as dialogs or cards.
+/// Filled buttons have the most visual impact after the [FloatingActionButton],
+/// and should be used for important, final actions that complete a flow,
+/// like **Save**, **Join now**, or **Confirm**.
 ///
-/// An elevated button is a label [child] displayed on a [Material]
-/// widget whose [Material.elevation] increases when the button is
-/// pressed. The label's [Text] and [Icon] widgets are displayed in
+/// A filled button is a label [child] displayed on a [Material]
+/// widget. The label's [Text] and [Icon] widgets are displayed in
 /// [style]'s [ButtonStyle.foregroundColor] and the button's filled
 /// background is the [ButtonStyle.backgroundColor].
 ///
-/// The elevated button's default style is defined by
-/// [defaultStyleOf]. The style of this elevated button can be
-/// overridden with its [style] parameter. The style of all elevated
+/// The filled button's default style is defined by
+/// [defaultStyleOf]. The style of this filled button can be
+/// overridden with its [style] parameter. The style of all filled
 /// buttons in a subtree can be overridden with the
-/// [ElevatedButtonTheme], and the style of all of the elevated
+/// [FilledButtonTheme], and the style of all of the filled
 /// buttons in an app can be overridden with the [Theme]'s
-/// [ThemeData.elevatedButtonTheme] property.
+/// [ThemeData.filledButtonTheme] property.
 ///
 /// The static [styleFrom] method is a convenient way to create a
-/// elevated button [ButtonStyle] from simple values.
+/// filled button [ButtonStyle] from simple values.
 ///
 /// If [onPressed] and [onLongPress] callbacks are null, then the
 /// button will be disabled.
 ///
-/// {@tool dartpad}
-/// This sample produces an enabled and a disabled ElevatedButton.
+/// To create a 'filled tonal' button, use [FilledButton.tonal].
 ///
-/// ** See code in examples/api/lib/material/elevated_button/elevated_button.0.dart **
+/// {@tool dartpad}
+/// This sample produces enabled and disabled filled and filled tonal
+/// buttons.
+///
+/// ** See code in examples/api/lib/material/filled_button/filled_button.0.dart **
 /// {@end-tool}
 ///
 /// See also:
 ///
-///  * [FilledButton], a filled button that doesn't elevate when pressed.
-///  * [FilledButton.tonal], a filled button variant that uses a secondary fill color.
+///  * [ElevatedButton], a filled button whose material elevates when pressed.
 ///  * [OutlinedButton], a button with an outlined border and no fill color.
 ///  * [TextButton], a button with no outline or fill color.
 ///  * <https://material.io/design/components/buttons.html>
 ///  * <https://m3.material.io/components/buttons>
 
 // ignore: must_be_immutable
-class $ElevatedButton extends PipeableWidget<Widget?> {
-  /// Create an ElevatedButton.
-  $ElevatedButton({
+class $FilledButton extends PipeableWidget<Widget?> {
+  /// Create a FilledButton.
+  $FilledButton({
     super.key,
     this.childKey,
     this.onPressed,
@@ -56,7 +56,7 @@ class $ElevatedButton extends PipeableWidget<Widget?> {
     this.style,
     this.focusNode,
     this.autofocus = false,
-    this.clipBehavior,
+    this.clipBehavior = Clip.none,
     this.statesController,
     super.child,
     this.iconAlignment = IconAlignment.start,
@@ -148,7 +148,7 @@ class $ElevatedButton extends PipeableWidget<Widget?> {
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton(
+    return FilledButton(
       key: childKey,
       onPressed: onPressed,
       onLongPress: onLongPress,

@@ -6,10 +6,12 @@ import 'package:analyzer/dart/analysis/analysis_context.dart';
 import 'package:analyzer/dart/analysis/analysis_context_collection.dart';
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/dart/element/type_system.dart';
 import 'package:args/command_runner.dart';
 import 'package:checked_yaml/checked_yaml.dart';
 import 'package:code_builder/code_builder.dart' as cb;
+import 'package:custom_lint_builder/custom_lint_builder.dart';
 import 'package:dart_style/dart_style.dart';
 import 'package:mason_logger/mason_logger.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
@@ -234,15 +236,14 @@ class AddWidgetCommand extends Command<int> {
           null => cb.refer('StatelessWidget', 'package:flutter/widgets.dart'),
         };
 
+        // Copy the documentation from the widget to the class
+        if (config.docs && wElement.documentationComment != null) {
+          c.docs.add(wElement.documentationComment!);
+        }
         // Becuse the parent of PipeableWidget is Widget which has an
         // @immutable annotation, we have to ignore it
         if (pipeableParameter != null) {
           c.docs.add("\n// ignore: must_be_immutable");
-        }
-
-        // Copy the documentation from the widget to the class
-        if (config.docs && wElement.documentationComment != null) {
-          c.docs.add(wElement.documentationComment!);
         }
 
         // If the parent widget has type parameters, then we will add them to the class.
@@ -301,11 +302,14 @@ class AddWidgetCommand extends Command<int> {
             final type =
                 typeReference(pElement.type, package.library.typeSystem);
 
-            final cb.Code? defaultCode;
+            final String? defaultCode;
             if (pElement.hasDefaultValue) {
               // The user won't be able to import private defaults
               // so we will ignore them.
-              if (pElement.defaultValueCode!.startsWith("_")) {
+
+              if (pElement.defaultValueCode!
+                  .replaceAll(RegExp(r"^const "), "")
+                  .startsWith("_")) {
                 defaultCode = null;
               } else {
                 // The default value is provided as a raw string.
@@ -324,11 +328,11 @@ class AddWidgetCommand extends Command<int> {
                     .expand((e) => e);
                 final isDefaultInStaticField = staticFields.any(
                     (element) => element.name == pElement.defaultValueCode);
+
                 if (isDefaultInStaticField) {
-                  defaultCode =
-                      cb.Code("${wElement.name}.${pElement.defaultValueCode}");
+                  defaultCode = "${wElement.name}.${pElement.defaultValueCode}";
                 } else {
-                  defaultCode = cb.Code(pElement.defaultValueCode!);
+                  defaultCode = pElement.defaultValueCode!;
                 }
               }
             } else {
@@ -355,10 +359,19 @@ class AddWidgetCommand extends Command<int> {
             final parameterDocs =
                 _documentationForParameter(pElement, conElement);
 
+            // If the default value is provided, then we will add an import
+            // for the type of the default value.
+            if (defaultCode != null) {
+              final import = _importForRawCode(defaultCode);
+              if (import != null) {
+                imports.add(import);
+              }
+            }
+
             final parameter = cb.Parameter((p) {
               p.name = parameterName;
               p.named = pElement.isNamed;
-              p.defaultTo = defaultCode;
+              p.defaultTo = defaultCode == null ? null : cb.Code(defaultCode);
               // This only controls the "required" keyword in the constructor.
               // The position of the parameter in the constructor is controlled by the
               // required and positional parameters.
@@ -390,6 +403,11 @@ class AddWidgetCommand extends Command<int> {
                 f.docs.add(docs);
               }
             }));
+            // If the predefined type is not a built-in type, then we will add an import.
+            final import = _importForType(pElement.type);
+            if (import != null) {
+              imports.add(import);
+            }
           }
         }));
 
@@ -610,4 +628,38 @@ String? _documentationForField(ParameterElement p, ConstructorElement con) {
   return _fieldFromParameter(_redirectedParameter(p, con))
       ?.field
       ?.documentationComment;
+}
+
+String? _importForType(DartType type) {
+  final rules = {
+    'package:flutter/gestures.dart': [
+      "DragStartBehavior",
+      "AllowedButtonsFilter",
+      "GestureLongPressDownCallback",
+      "AllowedButtonsFilter"
+    ]
+  };
+  for (final entry in rules.entries) {
+    for (final element in entry.value) {
+      final checker = TypeChecker.fromName(element, packageName: "flutter");
+      if (checker.isExactlyType(type)) {
+        return entry.key;
+      }
+    }
+  }
+  // ignore: deprecated_member_use
+  return _importForRawCode(type.getDisplayString(withNullability: true));
+}
+
+String? _importForRawCode(String element) {
+  final stringRules = {
+    "package:flutter/gestures.dart": [
+      "kDefaultMouseScrollToScaleFactor",
+      "kLongPressTimeout",
+      "ValueChanged<SelectedContent?>?",
+    ]
+  };
+  return stringRules.entries
+      .firstWhereOrNull((e) => e.value.contains(element))
+      ?.key;
 }

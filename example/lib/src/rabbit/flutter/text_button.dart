@@ -1,52 +1,64 @@
 import 'package:rabbit/pipeable.dart';
 import 'package:flutter/material.dart';
 
-/// A Material Design "elevated button".
+/// A Material Design "Text Button".
 ///
-/// Use elevated buttons to add dimension to otherwise mostly flat
-/// layouts, e.g. in long busy lists of content, or in wide
-/// spaces. Avoid using elevated buttons on already-elevated content
-/// such as dialogs or cards.
+/// Use text buttons on toolbars, in dialogs, or inline with other
+/// content but offset from that content with padding so that the
+/// button's presence is obvious. Text buttons do not have visible
+/// borders and must therefore rely on their position relative to
+/// other content for context. In dialogs and cards, they should be
+/// grouped together in one of the bottom corners. Avoid using text
+/// buttons where they would blend in with other content, for example
+/// in the middle of lists.
 ///
-/// An elevated button is a label [child] displayed on a [Material]
-/// widget whose [Material.elevation] increases when the button is
-/// pressed. The label's [Text] and [Icon] widgets are displayed in
-/// [style]'s [ButtonStyle.foregroundColor] and the button's filled
-/// background is the [ButtonStyle.backgroundColor].
+/// A text button is a label [child] displayed on a (zero elevation)
+/// [Material] widget. The label's [Text] and [Icon] widgets are
+/// displayed in the [style]'s [ButtonStyle.foregroundColor]. The
+/// button reacts to touches by filling with the [style]'s
+/// [ButtonStyle.backgroundColor].
 ///
-/// The elevated button's default style is defined by
-/// [defaultStyleOf]. The style of this elevated button can be
-/// overridden with its [style] parameter. The style of all elevated
-/// buttons in a subtree can be overridden with the
-/// [ElevatedButtonTheme], and the style of all of the elevated
-/// buttons in an app can be overridden with the [Theme]'s
-/// [ThemeData.elevatedButtonTheme] property.
+/// The text button's default style is defined by [defaultStyleOf].
+/// The style of this text button can be overridden with its [style]
+/// parameter. The style of all text buttons in a subtree can be
+/// overridden with the [TextButtonTheme] and the style of all of the
+/// text buttons in an app can be overridden with the [Theme]'s
+/// [ThemeData.textButtonTheme] property.
 ///
 /// The static [styleFrom] method is a convenient way to create a
-/// elevated button [ButtonStyle] from simple values.
+/// text button [ButtonStyle] from simple values.
 ///
-/// If [onPressed] and [onLongPress] callbacks are null, then the
-/// button will be disabled.
+/// If the [onPressed] and [onLongPress] callbacks are null, then this
+/// button will be disabled, it will not react to touch.
 ///
 /// {@tool dartpad}
-/// This sample produces an enabled and a disabled ElevatedButton.
+/// This sample shows various ways to configure TextButtons, from the
+/// simplest default appearance to versions that don't resemble
+/// Material Design at all.
 ///
-/// ** See code in examples/api/lib/material/elevated_button/elevated_button.0.dart **
+/// ** See code in examples/api/lib/material/text_button/text_button.0.dart **
+/// {@end-tool}
+///
+/// {@tool dartpad}
+/// This sample demonstrates using the [statesController] parameter to create a button
+/// that adds support for [WidgetState.selected].
+///
+/// ** See code in examples/api/lib/material/text_button/text_button.1.dart **
 /// {@end-tool}
 ///
 /// See also:
 ///
+///  * [ElevatedButton], a filled button whose material elevates when pressed.
 ///  * [FilledButton], a filled button that doesn't elevate when pressed.
 ///  * [FilledButton.tonal], a filled button variant that uses a secondary fill color.
 ///  * [OutlinedButton], a button with an outlined border and no fill color.
-///  * [TextButton], a button with no outline or fill color.
 ///  * <https://material.io/design/components/buttons.html>
 ///  * <https://m3.material.io/components/buttons>
 
 // ignore: must_be_immutable
-class $ElevatedButton extends PipeableWidget<Widget?> {
-  /// Create an ElevatedButton.
-  $ElevatedButton({
+class $TextButton extends PipeableWidget<Widget> {
+  /// Create a [TextButton].
+  $TextButton({
     super.key,
     this.childKey,
     this.onPressed,
@@ -58,7 +70,9 @@ class $ElevatedButton extends PipeableWidget<Widget?> {
     this.autofocus = false,
     this.clipBehavior,
     this.statesController,
-    super.child,
+    this.isSemanticButton = true,
+    @RequiredOrPiped()
+    super.child = const TemporaryWidget(name: '\$TextButton'),
     this.iconAlignment = IconAlignment.start,
   });
 
@@ -143,12 +157,21 @@ class $ElevatedButton extends PipeableWidget<Widget?> {
   /// {@macro flutter.material.inkwell.statesController}
   final WidgetStatesController? statesController;
 
+  /// Determine whether this subtree represents a button.
+  ///
+  /// If this is null, the screen reader will not announce "button" when this
+  /// is focused. This is useful for [MenuItemButton] and [SubmenuButton] when we
+  /// traverse the menu system.
+  ///
+  /// Defaults to true.
+  final bool? isSemanticButton;
+
   /// {@macro flutter.material.ButtonStyleButton.iconAlignment}
   final IconAlignment iconAlignment;
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton(
+    return TextButton(
       key: childKey,
       onPressed: onPressed,
       onLongPress: onLongPress,
@@ -159,6 +182,7 @@ class $ElevatedButton extends PipeableWidget<Widget?> {
       autofocus: autofocus,
       clipBehavior: clipBehavior,
       statesController: statesController,
+      isSemanticButton: isSemanticButton,
       child: child,
       iconAlignment: iconAlignment,
     );

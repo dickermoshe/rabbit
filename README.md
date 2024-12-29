@@ -216,14 +216,47 @@ See this [proposal](https://github.com/dart-lang/language/issues/4211) which ins
 
 <details><summary>Recommended Usage</summary>
 <p>
+
+The following configuration generates pipeable extensions for the most common Flutter widgets.
+Feel free to customize this list to include only the widgets you use most often.
+
 ```yaml
 rabbit:
   pipeable: true
   docs: true
   widgets:
     package:flutter/material.dart:
+      - Directionality
+      - Opacity
+      - ClipRRect
+      - Transform
+      - Padding
+      - Align
+      - Center
+      - SizedBox
+      - ConstrainedBox
+      - FractionallySizedBox
+      - SliverToBoxAdapter
+      - Positioned
+      - PositionedDirectional
+      - Flexible
+      - Expanded
+      - TableCell
+      - GestureDetector
+      - DecoratedBox
       - Container
+      - Hero
+      - Banner
+      - PreferredSize
+      - InkWell
       - ElevatedButton
+      - FilledButton
+      - OutlinedButton
+      - TextButton
+      - FloatingActionButton
+      - Tab
+      - Card
+      - Dialog
 ```
 
 </p>

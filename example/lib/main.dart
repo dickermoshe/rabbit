@@ -1,4 +1,3 @@
-import 'package:example/src/rabbit/flutter/column.dart';
 import 'package:example/src/rabbit/flutter/container.dart';
 import 'package:example/src/rabbit/flutter/directionality.dart';
 import 'package:example/src/rabbit/flutter/elevated_button.dart';
@@ -20,7 +19,7 @@ class MyApp extends StatelessWidget {
           useMaterial3: true,
         ),
         home: Scaffold(
-            body: $Column(
+            body: Column(
                 mainAxisAlignment: MainAxisAlignment.start,
                 mainAxisSize: MainAxisSize.max,
                 crossAxisAlignment: CrossAxisAlignment.center,

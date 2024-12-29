@@ -24,9 +24,37 @@ flutter:
 
 rabbit:
   pipeable: true
+  docs: true
   widgets:
     package:flutter/material.dart:
-      - ElevatedButton
       - Directionality
+      - Opacity
+      - ClipRRect
+      - Transform
+      - Padding
+      - Align
+      - Center
+      - SizedBox
+      - ConstrainedBox
+      - FractionallySizedBox
+      - SliverToBoxAdapter
+      - Positioned
+      - PositionedDirectional
+      - Flexible
+      - Expanded
+      - TableCell
+      - GestureDetector
+      - DecoratedBox
       - Container
-      - Column
+      - Hero
+      - Banner
+      - PreferredSize
+      - InkWell
+      - ElevatedButton
+      - FilledButton
+      - OutlinedButton
+      - TextButton
+      - FloatingActionButton
+      - Tab
+      - Card
+      - Dialog
