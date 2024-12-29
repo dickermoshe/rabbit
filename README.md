@@ -209,7 +209,7 @@ As an experimental feature, Rabbit can generate pipeable extensions for widgets.
 ```dart
 final widget = $Container()
   >> $Padding(padding: EdgeInsets.all(16))
-  >> $Text('Hello, World!');
+  >>> Text('Hello, World!');
 ```
 
 See this [proposal](https://github.com/dart-lang/language/issues/4211) which inspired this feature.
