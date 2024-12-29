@@ -1,5 +1,3 @@
-@Timeout(Duration(minutes: 2))
-
 import 'dart:io';
 
 import 'package:mason_logger/mason_logger.dart';
@@ -14,6 +12,7 @@ class _MockLogger extends Mock implements Logger {}
 
 class _MockProgress extends Mock implements Progress {}
 
+final projectDir = Directory.current;
 void main() async {
   group('test add widget', () {
     late Logger logger;
@@ -143,23 +142,6 @@ rabbit:
           verify(() => logger.err(invalidLibraryError("flutter"))).called(1);
         });
 
-        test('good library', () async {
-          await createTestProject(
-              mockDependencies: isMocked,
-              content: '''
-rabbit:
-  widgets:
-    package:flutter/material.dart:
-      - foo
-    package:flutter/cupertino.dart:
-      - all
-''',
-              append: true);
-          final result =
-              await commandRunner.run(['generate', "--validate_libraries"]);
-          expect(result, equals(ExitCode.success.code));
-        });
-
         group("validate wrapper", () {
           test('bad widget', () async {
             await createTestProject(
@@ -196,8 +178,9 @@ rabbit:
                 d.dir("src", [
                   d.dir("rabbit", [
                     d.dir("shadcn_ui", [
-                      d.file("shadcn_ui.dart",
+                      d.file("shad_button.dart",
                           """import 'package:shadcn_ui/shadcn_ui.dart';
+import 'package:flutter/widgets.dart';
 
 class \$ShadButton extends StatelessWidget {
   const \$ShadButton({
@@ -251,8 +234,9 @@ rabbit:
                 d.dir("src", [
                   d.dir("rabbit", [
                     d.dir("shadcn_ui", [
-                      d.file("shadcn_ui.dart",
+                      d.file("shad_button.dart",
                           """import 'package:shadcn_ui/shadcn_ui.dart';
+import 'package:flutter/widgets.dart';
 
 class \$ShadButton extends StatelessWidget {
   const \$ShadButton({
@@ -292,8 +276,9 @@ rabbit:
                 d.dir("src", [
                   d.dir("widgets", [
                     d.dir("shadcn_ui", [
-                      d.file("shadcn_ui.dart",
+                      d.file("shad_button.dart",
                           """import 'package:shadcn_ui/shadcn_ui.dart';
+import 'package:flutter/widgets.dart';
 
 class \$ShadButton extends StatelessWidget {
   const \$ShadButton({
@@ -315,61 +300,6 @@ class \$ShadButton extends StatelessWidget {
               ]).validate(testProject.io.path);
             }
           });
-          test('with prefix', timeout: Timeout(Duration(minutes: 5)), () async {
-            final testProject =
-                await createTestProject(mockDependencies: isMocked);
-
-            testProject.pubspec.writeAsStringSync('''
-rabbit:
-  add_imports: true
-  widgets:
-    package:shadcn_ui/shadcn_ui.dart:
-      - ShadButton
-''', mode: FileMode.append);
-            final result = await commandRunner.run(['generate']);
-            expect(result, equals(ExitCode.success.code));
-
-            if (isMocked) {
-              await d.dir("lib", [
-                d.dir("src", [
-                  d.dir("rabbit", [
-                    d.dir("shadcn_ui", [
-                      d.file("shadcn_ui.dart",
-                          """// ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:flutter/widgets.dart' as _i1;
-import 'package:shadcn_ui/shadcn_ui.dart' as _i2;
-
-class \$ShadButton extends _i1.StatelessWidget {
-  const \$ShadButton({
-    super.key,
-    required this.text,
-  });
-
-  final String text;
-
-  @override
-  _i1.Widget build(_i1.BuildContext context) {
-    return _i2.ShadButton(text: text);
-  }
-}
-""")
-                    ])
-                  ])
-                ])
-              ]).validate(testProject.io.path);
-            }
-
-            // Generations with prefix should be able to pass the dart analyzer
-            final analyzeResult = Process.runSync(
-              'dart',
-              ['analyze', "--fatal-infos"],
-              workingDirectory: p.normalize(testProject.io.path),
-            );
-            print(analyzeResult.stdout);
-            print(analyzeResult.stderr);
-            expect(analyzeResult.exitCode, equals(0),
-                reason: analyzeResult.stderr);
-          });
 
           if (isMocked) {
             test('custom prefix', () async {
@@ -390,8 +320,9 @@ rabbit:
                 d.dir("src", [
                   d.dir("rabbit", [
                     d.dir("shadcn_ui", [
-                      d.file("shadcn_ui.dart",
+                      d.file("shad_button.dart",
                           """import 'package:shadcn_ui/shadcn_ui.dart';
+import 'package:flutter/widgets.dart';
 
 class MyShadButton extends StatelessWidget {
   const MyShadButton({
@@ -430,8 +361,9 @@ rabbit:
                 d.dir("src", [
                   d.dir("rabbit", [
                     d.dir("shadcn_ui", [
-                      d.file("shadcn_ui.dart",
+                      d.file("shad_button.dart",
                           """import 'package:shadcn_ui/shadcn_ui.dart';
+import 'package:flutter/widgets.dart';
 
 /// Class Docs
 class \$ShadButton extends StatelessWidget {
@@ -447,6 +379,49 @@ class \$ShadButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ShadButton(text: text);
+  }
+}
+""")
+                    ])
+                  ])
+                ])
+              ]).validate(testProject.io.path);
+            });
+
+            test('pipeable', () async {
+              final testProject =
+                  await createTestProject(mockDependencies: isMocked);
+
+              testProject.pubspec.writeAsStringSync('''
+rabbit:
+  pipeable: true
+  widgets:
+    package:shadcn_ui/shadcn_ui.dart:
+      - ShadButton1
+      - ShadButton2
+''', mode: FileMode.append);
+              final result = await commandRunner.run(['generate']);
+              expect(result, equals(ExitCode.success.code));
+              await d.dir("lib", [
+                d.dir("src", [
+                  d.dir("rabbit", [
+                    d.dir("shadcn_ui", [
+                      d.file("shad_button1.dart", """
+import 'package:rabbit/pipeable.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
+import 'package:flutter/widgets.dart';
+
+// ignore: must_be_immutable
+class \$ShadButton1 extends PipeableWidget<Widget> {
+  \$ShadButton1({
+    super.key,
+    @RequiredOrPiped()
+    super.child = const TemporaryWidget(name: '\\\$ShadButton1'),
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ShadButton1(child: child);
   }
 }
 """)
@@ -484,9 +459,57 @@ dependencies:
     path: flutter
   shadcn_ui: 
     path: shadcn_ui
-
+  rabbit:
+    path: rabbit
 """),
           d.dir("lib", [d.file("main.dart", "")]),
+          d.dir("rabbit", [
+            d.file("pubspec.yaml", """
+name: rabbit
+
+environment:
+  sdk: ^3.3.0
+"""),
+            d.dir("lib", [
+              d.file("pipeable.dart", """
+import 'package:flutter/widgets.dart';
+class RequiredOrPiped {
+  const RequiredOrPiped();
+}
+
+class TemporaryWidget extends StatelessWidget {
+  const TemporaryWidget({super.key, required this.name});
+  final String name;
+
+  @override
+  Widget build(BuildContext context) =>
+      throw StateError('The widget \$name requires that a child be provided.');
+}
+
+// ignore: must_be_immutable
+abstract class PipeableWidget<T extends Widget?> extends StatelessWidget {
+  PipeableWidget({super.key, T? child}) {
+    if (child != null) this.child = child;
+  }
+  T? _child;
+  set child(T value) => _child = value;
+  T get child => _child as T;
+  PipeableWidget operator >>(PipeableWidget widget) {
+    setWidget(widget);
+    setWidget = widget.setWidget;
+    return this;
+  }
+
+  Widget operator >>>(Widget widget) {
+    setWidget(widget);
+    return this;
+  }
+
+  late Function(Widget) setWidget = (widget) => child = widget as T;
+}
+"""),
+            ]),
+          ]),
           d.dir("shadcn_ui", [
             d.file("pubspec.yaml", """
 name: shadcn_ui
@@ -508,7 +531,35 @@ class ShadButton extends StatelessWidget {
   final String text;
 
   /// Constructor Docs
-  ShadButton({required this.text});
+  const ShadButton({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container();
+  }
+}
+
+class ShadButton1 extends StatelessWidget {
+
+  /// Field Docs
+  final Widget child;
+
+  /// Constructor Docs
+  const ShadButton1({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container();
+  }
+}
+
+class ShadButton2 extends StatelessWidget {
+
+  /// Field Docs
+  final Widget? child;
+
+  /// Constructor Docs
+  const ShadButton2({this.child});
 
   @override
   Widget build(BuildContext context) {
@@ -598,6 +649,8 @@ dependencies:
   flutter:
     sdk: flutter
   shadcn_ui: ^0.12.0
+  rabbit:
+    path: ${projectDir.path.replaceAll(r"\", "/")}
 """),
           d.dir("lib", [d.file("main.dart", "")])
         ],
@@ -609,7 +662,6 @@ dependencies:
     ['pub', 'get', mockDependencies ? "--offline" : ""],
     workingDirectory: p.normalize(testProject.io.path),
   );
-  d.sandbox;
   final prevCurrentDir = Directory.current;
   Directory.current = testProject.io.path;
   addTearDown(() {

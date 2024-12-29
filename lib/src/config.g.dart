@@ -23,16 +23,11 @@ Config _$ConfigFromJson(Map json) => $checkedCreate(
           outputDir: $checkedConvert(
               'output_dir', (v) => v as String? ?? "lib/src/rabbit"),
           docs: $checkedConvert('docs', (v) => v as bool? ?? false),
-          addImports:
-              $checkedConvert('add_imports', (v) => v as bool? ?? false),
           pipeable: $checkedConvert('pipeable', (v) => v as bool? ?? false),
         );
         return val;
       },
-      fieldKeyMap: const {
-        'outputDir': 'output_dir',
-        'addImports': 'add_imports'
-      },
+      fieldKeyMap: const {'outputDir': 'output_dir'},
     );
 
 Map<String, dynamic> _$ConfigToJson(Config instance) => <String, dynamic>{
@@ -40,7 +35,6 @@ Map<String, dynamic> _$ConfigToJson(Config instance) => <String, dynamic>{
       'widgets': instance.widgets.map((k, e) => MapEntry(k, e.toList())),
       'output_dir': instance.outputDir,
       'docs': instance.docs,
-      'add_imports': instance.addImports,
       'pipeable': instance.pipeable,
     };
 

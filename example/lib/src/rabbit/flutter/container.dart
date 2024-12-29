@@ -1,11 +1,12 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/src/widgets/container.dart';
 import 'package:rabbit/pipeable.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
 // ignore: must_be_immutable
 class $Container extends PipeableWidget<Widget?> {
   $Container({
     super.key,
+    this.childKey,
     this.alignment,
     this.padding,
     this.color,
@@ -18,8 +19,10 @@ class $Container extends PipeableWidget<Widget?> {
     this.transform,
     this.transformAlignment,
     super.child,
-    required this.clipBehavior,
+    this.clipBehavior = Clip.none,
   });
+
+  final Key? childKey;
 
   final AlignmentGeometry? alignment;
 
@@ -48,7 +51,7 @@ class $Container extends PipeableWidget<Widget?> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      key: key,
+      key: childKey,
       alignment: alignment,
       padding: padding,
       color: color,

@@ -1,39 +1,22 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/src/widgets/basic.dart';
 import 'package:rabbit/pipeable.dart';
-
-// ignore: must_be_immutable
-class $Directionality extends PipeableWidget<Widget> {
-  $Directionality({
-    super.key,
-    required this.textDirection,
-    @RequiredOrPiped()
-    super.child = const TemporaryWidget(name: 'Directionality'),
-  });
-
-  final TextDirection textDirection;
-
-  @override
-  Widget build(BuildContext context) {
-    return Directionality(
-      key: key,
-      textDirection: textDirection,
-      child: child,
-    );
-  }
-}
+import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
 class $Column extends StatelessWidget {
   const $Column({
     super.key,
-    required this.mainAxisAlignment,
-    required this.mainAxisSize,
-    required this.crossAxisAlignment,
+    this.childKey,
+    this.mainAxisAlignment = MainAxisAlignment.start,
+    this.mainAxisSize = MainAxisSize.max,
+    this.crossAxisAlignment = CrossAxisAlignment.center,
     this.textDirection,
-    required this.verticalDirection,
+    this.verticalDirection = VerticalDirection.down,
     this.textBaseline,
-    required this.children,
+    this.spacing = 0.0,
+    this.children = const <Widget>[],
   });
+
+  final Key? childKey;
 
   final MainAxisAlignment mainAxisAlignment;
 
@@ -47,18 +30,21 @@ class $Column extends StatelessWidget {
 
   final TextBaseline? textBaseline;
 
+  final double spacing;
+
   final List<Widget> children;
 
   @override
   Widget build(BuildContext context) {
     return Column(
-      key: key,
+      key: childKey,
       mainAxisAlignment: mainAxisAlignment,
       mainAxisSize: mainAxisSize,
       crossAxisAlignment: crossAxisAlignment,
       textDirection: textDirection,
       verticalDirection: verticalDirection,
       textBaseline: textBaseline,
+      spacing: spacing,
       children: children,
     );
   }

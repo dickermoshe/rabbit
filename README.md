@@ -27,9 +27,9 @@ RedContainer(
     - [Example Configuration](#example-configuration)
     - [`widgets`](#widgets)
     - [`output_dir`](#output_dir)
-    - [`add_imports`](#add_imports)
     - [`prefix`](#prefix)
     - [`docs`](#docs)
+    - [`pipeable`](#pipeable)
   - [Multiple Constructors](#multiple-constructors)
   - [Known Limitations](#known-limitations)
   - [Maintaining Generated Code](#maintaining-generated-code)
@@ -133,20 +133,19 @@ RedContainer(
 
 The following options can be configured in your `pubspec.yaml` under the `rabbit` key:
 
-| Option        | Default           | Description                                          |
-| ------------- | ----------------- | ---------------------------------------------------- |
-| `widgets`     | Required          | Map of package imports and widget names              |
-| `output_dir`  | `lib/src/wrapped` | Directory where generated files will be placed       |
-| `add_imports` | `false`           | Create the import statements for the generated files |
-| `prefix`      | `$`               | Prefix for generated widget names                    |
-| `docs`        | `false`           | Include documentation comments from original widget  |
+| Option       | Default           | Description                                         |
+| ------------ | ----------------- | --------------------------------------------------- |
+| `widgets`    | Required          | Map of package imports and widget names             |
+| `output_dir` | `lib/src/wrapped` | Directory where generated files will be placed      |
+| `prefix`     | `$`               | Prefix for generated widget names                   |
+| `docs`       | `false`           | Include documentation comments from original widget |
+| `pipeable`   | `false`           | Generate pipeable extensions for widgets            |
 
 ### Example Configuration
 
 ```yaml
 rabbit:
-  output_dir: lib/src/widgets 
-  add_imports: true
+  output_dir: lib/src/widgets
   prefix: My
   docs: true
   widgets:
@@ -183,18 +182,6 @@ rabbit:
 - Relative paths are resolved from your project root
 - The generate widgets will match the package structure of the original widgets
 
-### `add_imports`
-`rabbit` *can* generate import statements for the generated files, however they look very ugly so it's disabled by default.
-
-If you want to use this feature, you can enable it like this:
-
-```yaml
-rabbit:
-  add_imports: true
-```
-- Default: `false`
-- When `true`, adds imports with package prefixes to avoid naming conflicts
-
 ### `prefix`
 The prefix added to generated widget names to avoid naming conflicts.
 ```yaml
@@ -203,7 +190,6 @@ rabbit:
 ```
 - Default: `$`
 - Can be set to an empty string (`''`) if you want no prefix
-- If using no prefix, consider setting `add_imports: true` to avoid naming conflicts
 
 ### `docs`
 Controls whether documentation comments from the original widget are included.
@@ -215,7 +201,34 @@ rabbit:
 - Includes parameter descriptions, examples, and other documentation
 - Can significantly increase the size of generated files
 - Useful when creating public packages or maintaining API documentation
-- 
+
+### `pipeable`
+
+As an experimental feature, Rabbit can generate pipeable extensions for widgets. This allows you to chain widget properties using this operator (`>>`) instead of nested constructors.
+
+```dart
+final widget = $Container()
+  >> $Padding(padding: EdgeInsets.all(16))
+  >> $Text('Hello, World!');
+```
+
+See this [proposal](https://github.com/dart-lang/language/issues/4211) which inspired this feature.
+
+<details><summary>Recommended Usage</summary>
+<p>
+```yaml
+rabbit:
+  pipeable: true
+  docs: true
+  widgets:
+    package:flutter/material.dart:
+      - Container
+      - ElevatedButton
+```
+
+</p>
+</details> 
+
 ## Multiple Constructors
 
 When a widget has multiple constructors, Rabbit generates a separate wrapper for each constructor. For example, with `ListView`:

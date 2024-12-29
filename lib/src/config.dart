@@ -10,15 +10,12 @@ class Config {
   @JsonKey(name: 'output_dir')
   final String outputDir;
   final bool docs;
-  @JsonKey(name: 'add_imports')
-  final bool addImports;
   final bool pipeable;
   Config({
     this.prefix = "\$",
     this.widgets = const {},
     this.outputDir = "lib/src/rabbit",
     this.docs = false,
-    this.addImports = false,
     this.pipeable = false,
   });
 
