@@ -48,7 +48,7 @@ jobs:
         run: flutter analyze --fatal-infos --fatal-warnings .
 
       - name: 🧪 Test
-        run: flutter test
+        run: dart test
 
       - name: 📚 Test Example
         working-directory: example
